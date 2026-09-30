@@ -533,7 +533,7 @@ app.post('/api/ai/inflation-swap', requireAuth, async (req, res) => {
   if (apiKey) {
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const prompt = `You are the core intelligence of foodie, an expert hyper-local sports nutritionist and food economist.
+      const prompt = `You are the core intelligence of CleverDish, an expert hyper-local sports nutritionist and food economist.
 The user is planning meal: "${mealName}".
 The ingredient "${currentIngredient}" currently costs ${currency} ${currentCost} due to market inflation.
 User's country: ${country}.
@@ -621,7 +621,7 @@ Return ONLY the raw JSON without markdown code fences.`;
   return res.json({
     success: true,
     swap: defaultSwap,
-    engine: 'foodie-local-rules-engine'
+    engine: 'cleverdish-local-rules-engine'
   });
 });
 
@@ -647,7 +647,7 @@ app.post('/api/ai/pantry-scan', requireAuth, async (req, res) => {
       const ai = new GoogleGenAI({ apiKey });
       const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-      const prompt = `You are foodie's Pantry-Aware Vision Engine.
+      const prompt = `You are CleverDish's Pantry-Aware Vision Engine.
 Examine this pantry / kitchen image. Identify all food ingredients and staples visible.
 Estimate standard package or visible quantities, their approximate market value in ${currency} (${country}), and specify which grocery list categories they satisfy.
 Respond strictly in JSON without markdown code fences:
@@ -733,7 +733,7 @@ Respond strictly in JSON without markdown code fences:
       totalBudgetSaved: totalSaved,
       summary: `Found 4 core kitchen staples in your pantry. We deducted ${currency} ${totalSaved.toLocaleString()} directly from this month's grocery allowance!`
     },
-    engine: 'foodie-vision-rule-detector'
+    engine: 'cleverdish-vision-rule-detector'
   });
 });
 
@@ -797,7 +797,7 @@ Respond strictly in JSON without markdown code fences:
       garnishAndFinishing: "Crushed dried Cameroon pepper slivers, micro-greens, and cold-pressed oil drizzle",
       appetizingHighlight: "Tender, succulent protein with rich macro density and mouth-watering contrast."
     },
-    engine: 'foodie-plating-rules-engine'
+    engine: 'cleverdish-plating-rules-engine'
   });
 });
 
@@ -836,7 +836,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`foodie server listening on http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'dev'})`);
+    console.log(`CleverDish server listening on http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'dev'})`);
   });
 }
 

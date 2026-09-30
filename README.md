@@ -1,7 +1,7 @@
 # 🍲 CleverDish — Smart Nutrition & Open-Market Budget Engine
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646cff.svg)](https://vitejs.dev/)
@@ -105,7 +105,7 @@ Mainstream fitness apps assume users shop at Whole Foods with pre-portioned calo
 │   ├── App.tsx                 # Core application controller & view router
 │   ├── main.tsx                # React DOM entry point
 │   └── index.css               # Tailwind global imports
-├── server.ts                   # Express proxy & SSR/static delivery server
+├── server.ts                   # Express API server & static asset delivery
 ├── metadata.json               # AI Studio application metadata
 └── package.json                # Dependencies & scripts
 ```
@@ -116,20 +116,27 @@ Mainstream fitness apps assume users shop at Whole Foods with pre-portioned calo
 
 ### Prerequisites
 - Node.js 18+ installed
-- npm or pnpm package manager
+- npm package manager
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/cleverdish.git
-   cd cleverdish
+   git clone https://github.com/Justvictorya/CleverDish.git
+   cd CleverDish
    ```
 
 2. **Install dependencies:**
    ```bash
    npm install
    ```
+
+3. **Configure environment (optional):**
+   ```bash
+   cp .env.example .env
+   ```
+   Add a `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey) to enable
+   real Gemini responses. Without it the app runs on its built-in local fallback engines.
 
 3. **Run the development server:**
    ```bash
@@ -157,6 +164,38 @@ CleverDish comes pre-configured with native currencies, staple foods, and market
 - 🇺🇸 **United States (USD - $):** Whole Foods, Trader Joe's, Local Farmers Markets
 - 🇬🇧 **United Kingdom (GBP - £):** Tesco, Sainsbury's, Borough Market
 - 🇨🇦 **Canada (CAD - C$):** Loblaws, No Frills, St. Lawrence Market
+
+---
+
+## 🚀 Deployment
+
+CleverDish ships as a single Node service that serves both the API and the built SPA.
+
+**Build command**
+```bash
+npm ci && npm run build
+```
+
+**Start command**
+```bash
+npm start
+```
+
+`npm start` runs the server in production mode, serving the compiled assets from `dist/`.
+A `render.yaml` and `railway.json` are included for one-click deploys.
+
+### Environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `GEMINI_API_KEY` | optional | Enables real Gemini output. Omit to use local fallback engines. |
+| `PORT` | no | HTTP port (default `3000`). |
+| `DATA_DIR` | recommended in production | Path for persisted price ledger, auth tokens and plate photos. Point at a mounted disk. |
+| `NODE_ENV` | set by `npm start` | `production` serves the built assets. |
+
+> **Persistence:** price samples, overrides, auth tokens and uploaded photos are written to
+> `DATA_DIR`. On hosts with an ephemeral filesystem (e.g. a free instance) this data resets on
+> redeploy — attach a persistent disk and set `DATA_DIR` to keep it.
 
 ---
 
