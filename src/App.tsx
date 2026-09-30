@@ -1,0 +1,1160 @@
+import React, { useState, useEffect } from 'react';
+import { UserProfile, Meal, CountryCode, FitnessGoal } from './types';
+import { COUNTRIES } from './data/countries';
+import { generate28DayPlan } from './data/rotationPlans';
+import { VERIFIED_VENDORS } from './data/vendors';
+import { calculateMacros, computeBudgetVerdict } from './utils/nutrition';
+import { Navbar } from './components/Navbar';
+import { DailyMealCard } from './components/DailyMealCard';
+import { PocketMoneyWallet } from './components/PocketMoneyWallet';
+import { PhotoLockModal } from './components/PhotoLockModal';
+import { StreakCelebration } from './components/StreakCelebration';
+import { InflationSwapModal } from './components/InflationSwapModal';
+import { MarketLedgerModal } from './components/MarketLedgerModal';
+import { PantryScannerModal } from './components/PantryScannerModal';
+import { OnboardingModal } from './components/OnboardingModal';
+import { TravelModeModal } from './components/TravelModeModal';
+import { CookbookModal } from './components/CookbookModal';
+import { SendFoodHomeModal } from './components/SendFoodHomeModal';
+import { ProSubscriptionModal } from './components/ProSubscriptionModal';
+import { SqlSchemaModal } from './components/SqlSchemaModal';
+import { WeeklyMacroChart } from './components/WeeklyMacroChart';
+import { MacroHistory } from './components/MacroHistory';
+import { StreakMiniCard } from './components/StreakMiniCard';
+import { WeeklyMarketRunModal } from './components/WeeklyMarketRunModal';
+import { HandPortionGuideModal } from './components/HandPortionGuideModal';
+import { FridgeRescueModal } from './components/FridgeRescueModal';
+import { FreezerVaultModal } from './components/FreezerVaultModal';
+import { AccomplishmentCenterModal } from './components/AccomplishmentCenterModal';
+import { BodyStatisticsTab } from './components/BodyStatisticsTab';
+import { FreezerVaultItem, CleverBadge, DailyQuest, CommunityChallenge } from './types';
+import { getDefaultDailyQuests, INITIAL_BADGES, getChefTier, getDefaultChallenges } from './utils/gamification';
+import { SignUpOnboardingFlow } from './components/SignUpOnboardingFlow';
+import { GoalAndBudgetBar } from './components/GoalAndBudgetBar';
+import { getTodaysCycleDay, getTimeUntilMidnight, formatCurrentDate } from './utils/calendarSync';
+import { fireMealStreakConfetti } from './utils/confetti';
+import {
+  Flame,
+  Calendar,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Store,
+  ChevronLeft,
+  ChevronRight,
+  TrendingDown,
+  Camera,
+  HeartHandshake,
+  CheckCircle2,
+  ExternalLink,
+  Award,
+  RefreshCw,
+  Utensils,
+  Clock,
+  ShoppingBag
+} from 'lucide-react';
+import { soundFX } from './utils/sound';
+
+const DEFAULT_PROFILE: UserProfile = {
+  id: 'usr_victor',
+  name: 'Victoria',
+  country: 'NG',
+  age: 26,
+  gender: 'female',
+  weightKg: 65,
+  heightCm: 168,
+  activityLevel: 1.375,
+  goal: 'lose_weight',
+  staplePreference: 'indigenous',
+  budgetPeriod: 'month',
+  budgetAmount: 90000,
+  monthlyBudget: 90000,
+  isPro: false,
+  travelModeActive: false,
+  homeCountry: 'NG',
+  currentCountry: 'NG',
+  streak: 3,
+  lastLoggedDate: null,
+  foodiePoints: 150,
+  hasOnboarded: false
+};
+
+export default function App() {
+  // Persistent local profile
+  const [profile, setProfile] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem('foodie_profile');
+      return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
+    } catch {
+      return DEFAULT_PROFILE;
+    }
+  });
+
+  // Calculate today's exact day in the 28-day cycle based on calendar date
+  const todaysCycleDay = getTodaysCycleDay(profile.planStartDate);
+  const [selectedDay, setSelectedDay] = useState<number>(() => todaysCycleDay);
+  const [activeTab, setActiveTab] = useState<'today' | 'rotation' | 'analytics' | 'wallet' | 'vendors' | 'ledger'>('today');
+  const [countdown, setCountdown] = useState(getTimeUntilMidnight());
+  const [currentDateFormatted, setCurrentDateFormatted] = useState(formatCurrentDate());
+
+  // Automatic midnight countdown and daily rotation refresh timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const remaining = getTimeUntilMidnight();
+      setCountdown(remaining);
+
+      // When crossing midnight (00:00:00), automatically refresh cycle day
+      if (remaining.hours === 0 && remaining.minutes === 0 && remaining.seconds <= 1) {
+        const nextDay = getTodaysCycleDay(profile.planStartDate);
+        setSelectedDay(nextDay);
+        setCurrentDateFormatted(formatCurrentDate());
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [profile.planStartDate]);
+
+  // 28-day rotational meal plan state (guarantees morning, afternoon, evening for all 28 days)
+  const [meals, setMeals] = useState<Meal[]>(() => {
+    try {
+      const saved = localStorage.getItem(`foodie_meals_${profile.country}_${profile.staplePreference}`);
+      if (saved) {
+        const parsed: Meal[] = JSON.parse(saved);
+        if (parsed.length >= 84 && parsed.some(m => m.type === 'evening')) {
+          return parsed;
+        }
+      }
+      const fresh = generate28DayPlan(profile.country, profile.staplePreference);
+      localStorage.setItem(`foodie_meals_${profile.country}_${profile.staplePreference}`, JSON.stringify(fresh));
+      return fresh;
+    } catch {
+      return generate28DayPlan(profile.country, profile.staplePreference);
+    }
+  });
+
+  // Saved favorites for cookbook
+  const [favorites, setFavorites] = useState<Meal[]>([]);
+
+  // Dark mode theme state
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('foodie_theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
+  });
+
+  // Sync theme class to document root
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('foodie_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('foodie_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  // Modal visibility states
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [photoLockMeal, setPhotoLockMeal] = useState<Meal | null>(null);
+  const [inflationSwapMeal, setInflationSwapMeal] = useState<Meal | null>(null);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+  const [isPantryScannerOpen, setIsPantryScannerOpen] = useState(false);
+  const [isTravelModeOpen, setIsTravelModeOpen] = useState(false);
+  const [isCookbookOpen, setIsCookbookOpen] = useState(false);
+  const [isSendFoodHomeOpen, setIsSendFoodHomeOpen] = useState(false);
+  const [isProModalOpen, setIsProModalOpen] = useState(false);
+  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+  const [isMarketRunOpen, setIsMarketRunOpen] = useState(false);
+  const [isHandGuideOpen, setIsHandGuideOpen] = useState(false);
+  const [handGuideMeal, setHandGuideMeal] = useState<Meal | null>(null);
+  const [isFridgeRescueOpen, setIsFridgeRescueOpen] = useState(false);
+  const [fridgeRescueMeal, setFridgeRescueMeal] = useState<Meal | null>(null);
+  const [isFreezerVaultOpen, setIsFreezerVaultOpen] = useState(false);
+  const [isAccomplishmentOpen, setIsAccomplishmentOpen] = useState(false);
+  const [levelUpToast, setLevelUpToast] = useState<{ show: boolean; level: number; title: string } | null>(null);
+  const [selectedVendorMeal, setSelectedVendorMeal] = useState<Meal | null>(null);
+
+  const handleOrderFromVendors = (meal: Meal) => {
+    setSelectedVendorMeal(meal);
+    setActiveTab('vendors');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Daily Quests State (persisted per day)
+  const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>(() => {
+    try {
+      const saved = localStorage.getItem(`cleverdish_quests_${formatCurrentDate()}`);
+      return saved ? JSON.parse(saved) : getDefaultDailyQuests();
+    } catch {
+      return getDefaultDailyQuests();
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`cleverdish_quests_${formatCurrentDate()}`, JSON.stringify(dailyQuests));
+  }, [dailyQuests]);
+
+  // Trophies / Badges State
+  const [badges, setBadges] = useState<CleverBadge[]>(() => {
+    try {
+      const saved = localStorage.getItem(`cleverdish_badges_${profile.id}`);
+      return saved ? JSON.parse(saved) : INITIAL_BADGES;
+    } catch {
+      return INITIAL_BADGES;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`cleverdish_badges_${profile.id}`, JSON.stringify(badges));
+  }, [badges, profile.id]);
+
+  // Community Challenges State (persisted per user)
+  const [challenges, setChallenges] = useState<CommunityChallenge[]>(() => {
+    try {
+      const saved = localStorage.getItem(`cleverdish_challenges_${profile.id}`);
+      return saved ? JSON.parse(saved) : getDefaultChallenges(profile.name || 'Victoria', profile.country);
+    } catch {
+      return getDefaultChallenges(profile.name || 'Victoria', profile.country);
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`cleverdish_challenges_${profile.id}`, JSON.stringify(challenges));
+  }, [challenges, profile.id]);
+
+  const handleJoinChallenge = (challengeId: string) => {
+    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isJoined: true, participantsCount: c.participantsCount + 1 } : c));
+  };
+
+  const handleLeaveChallenge = (challengeId: string) => {
+    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isJoined: false, participantsCount: Math.max(0, c.participantsCount - 1) } : c));
+  };
+
+  const handleClaimChallengeReward = (challengeId: string) => {
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (!challenge) return;
+    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isCompleted: true } : c));
+    awardXp(challenge.rewardXp, `Completed Challenge: ${challenge.title}`);
+  };
+
+  const awardXp = (amount: number, reason: string) => {
+    setProfile(prev => {
+      const currentXp = prev.xp ?? prev.foodiePoints ?? 380;
+      const nextXp = currentXp + amount;
+      const prevTier = getChefTier(currentXp);
+      const nextTier = getChefTier(nextXp);
+
+      // Check level-up celebration
+      if (nextTier.level > prevTier.level) {
+        soundFX.playLevelUp();
+        fireMealStreakConfetti();
+        setLevelUpToast({ show: true, level: nextTier.level, title: nextTier.title });
+        setTimeout(() => setLevelUpToast(null), 5000);
+      }
+
+      return {
+        ...prev,
+        xp: nextXp,
+        foodiePoints: nextXp,
+        level: nextTier.level
+      };
+    });
+  };
+
+  const handleClaimQuest = (questId: string) => {
+    const quest = dailyQuests.find(q => q.id === questId);
+    if (!quest || quest.isCompleted) return;
+
+    setDailyQuests(prev => prev.map(q => q.id === questId ? { ...q, isCompleted: true } : q));
+    awardXp(quest.xpReward, `Completed quest: ${quest.title}`);
+  };
+
+  const completeQuestAction = (actionKey: DailyQuest['actionKey']) => {
+    const target = dailyQuests.find(q => q.actionKey === actionKey && !q.isCompleted);
+    if (target) {
+      soundFX.playQuestComplete();
+      fireMealStreakConfetti();
+      handleClaimQuest(target.id);
+    }
+  };
+
+  // Freezer Vault State with Local Storage persistence
+  const [freezerVault, setFreezerVault] = useState<FreezerVaultItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(`foodie_freezer_${profile.id}`);
+      return saved ? JSON.parse(saved) : [
+        {
+          id: 'vault_1',
+          mealId: 'prepped_1',
+          mealTitle: 'Smoky Firewood Jollof Rice with Char-Grilled Chicken',
+          proteinType: 'poultry',
+          portionsRemaining: 3,
+          totalPortionsPrepared: 4,
+          datePrepared: 'Yesterday',
+          caloriesPerPortion: 650,
+          proteinGrams: 36,
+          carbsGrams: 75,
+          fatGrams: 16
+        },
+        {
+          id: 'vault_2',
+          mealId: 'prepped_2',
+          mealTitle: 'Rich Fishermans Catfish Soup with Eba',
+          proteinType: 'fish',
+          portionsRemaining: 2,
+          totalPortionsPrepared: 4,
+          datePrepared: '3 days ago',
+          caloriesPerPortion: 580,
+          proteinGrams: 42,
+          carbsGrams: 52,
+          fatGrams: 14
+        }
+      ];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`foodie_freezer_${profile.id}`, JSON.stringify(freezerVault));
+  }, [freezerVault, profile.id]);
+
+  // Sync profile to localStorage
+  useEffect(() => {
+    localStorage.setItem('foodie_profile', JSON.stringify(profile));
+  }, [profile]);
+
+  // Sync meals to localStorage
+  useEffect(() => {
+    localStorage.setItem(`foodie_meals_${profile.country}_${profile.staplePreference}`, JSON.stringify(meals));
+  }, [meals, profile.country, profile.staplePreference]);
+
+  const country = COUNTRIES[profile.country] || COUNTRIES.NG;
+  const macros = calculateMacros(profile);
+  const budgetVerdict = computeBudgetVerdict(profile);
+
+  // Current day's morning and afternoon meals
+  const todaysMeals = meals.filter(m => m.dayNumber === selectedDay);
+
+  // Filter verified vendors for active country
+  const countryVendors = VERIFIED_VENDORS.filter(v => v.country === profile.country);
+  const activeVendors = countryVendors.length > 0 ? countryVendors : VERIFIED_VENDORS.slice(0, 4);
+
+  // Handlers
+  const handleFinishSignUp = (newProfile: UserProfile) => {
+    const updated = { ...newProfile, hasOnboarded: true };
+    setProfile(updated);
+    const refreshedMeals = generate28DayPlan(updated.country, updated.staplePreference);
+    setMeals(refreshedMeals);
+    setSelectedDay(1);
+    setActiveTab('today');
+  };
+
+  const handleChangeGoal = (newGoal: FitnessGoal) => {
+    setProfile(prev => ({ ...prev, goal: newGoal }));
+  };
+
+  const handleChangeBudget = (newBudget: number, newPeriod: 'day' | 'week' | 'month') => {
+    const monthly = newPeriod === 'day' ? newBudget * 30 : newPeriod === 'week' ? Math.round((newBudget / 7) * 30) : newBudget;
+    setProfile(prev => ({
+      ...prev,
+      budgetAmount: newBudget,
+      budgetPeriod: newPeriod,
+      monthlyBudget: monthly
+    }));
+  };
+
+  const handleUpdateCountry = (newCountry: CountryCode, isTravelMode: boolean) => {
+    setProfile(prev => ({
+      ...prev,
+      country: newCountry,
+      travelModeActive: isTravelMode
+    }));
+    const refreshedMeals = generate28DayPlan(newCountry, profile.staplePreference);
+    setMeals(refreshedMeals);
+  };
+
+  const handlePhotoVerificationSuccess = (photoUrl: string) => {
+    if (!photoLockMeal) return;
+
+    setMeals(prev => prev.map(m => {
+      if (m.id === photoLockMeal.id) {
+        return { ...m, photoVerified: true, photoUrl };
+      }
+      return m;
+    }));
+
+    // Trigger subtle confetti reward upon photo upload
+    fireMealStreakConfetti();
+
+    // Increment streak & award 50 XP
+    const nextStreak = profile.streak + 1;
+    awardXp(50, 'Authenticated Plate Photo');
+    completeQuestAction('photo_plate');
+
+    setProfile(prev => ({
+      ...prev,
+      streak: nextStreak,
+      lastLoggedDate: new Date().toISOString()
+    }));
+
+    setIsCelebrationOpen(true);
+  };
+
+  const handleVerifyMealPhotoDirect = (mealId: string, photoUrl: string) => {
+    setMeals(prev => prev.map(m => {
+      if (m.id === mealId) {
+        return { ...m, photoVerified: true, photoUrl };
+      }
+      return m;
+    }));
+
+    const nextStreak = profile.streak + 1;
+    awardXp(50, 'Direct Plate Photo Authenticated');
+    completeQuestAction('photo_plate');
+
+    setProfile(prev => ({
+      ...prev,
+      streak: nextStreak,
+      lastLoggedDate: new Date().toISOString()
+    }));
+  };
+
+  const handleApplyInflationSwap = (mealId: string, swapData: any) => {
+    setMeals(prev => prev.map(m => {
+      if (m.id === mealId) {
+        return {
+          ...m,
+          isSwapped: true,
+          originalCost: m.estimatedCost,
+          estimatedCost: m.estimatedCost - (m.estimatedCost * (swapData.costSavingsPercent / 100)),
+          swapInfo: {
+            swappedIngredient: swapData.swappedIngredient,
+            newCost: swapData.newCost,
+            costSavingsPercent: swapData.costSavingsPercent,
+            rationale: swapData.rationale
+          }
+        };
+      }
+      return m;
+    }));
+  };
+
+  const handleAddFreezerPortions = (meal: Meal, portions: number) => {
+    const newItem: FreezerVaultItem = {
+      id: `vault_${Date.now()}`,
+      mealId: meal.id,
+      mealTitle: meal.title,
+      proteinType: meal.proteinSourceType,
+      portionsRemaining: portions,
+      totalPortionsPrepared: portions + 1,
+      datePrepared: 'Today',
+      caloriesPerPortion: meal.calories,
+      proteinGrams: meal.protein,
+      carbsGrams: meal.carbs,
+      fatGrams: meal.fat
+    };
+    setFreezerVault(prev => [newItem, ...prev]);
+    awardXp(40, 'Stashed Big Pot in Freezer Vault');
+    completeQuestAction('vault_stash');
+  };
+
+  const handleConsumeFreezerPortion = (itemId: string) => {
+    const item = freezerVault.find(i => i.id === itemId);
+    if (!item) return;
+
+    setFreezerVault(prev => prev.map(i => {
+      if (i.id === itemId) {
+        return { ...i, portionsRemaining: Math.max(0, i.portionsRemaining - 1) };
+      }
+      return i;
+    }).filter(i => i.portionsRemaining > 0));
+
+    awardXp(25, 'Defrosted Vault Portion (₦0 spend)');
+
+    // Defrost effect on today's afternoon meal (or first meal found): sets cost to 0 and cook time to 5 min!
+    setMeals(prev => prev.map(m => {
+      if (m.dayNumber === selectedDay && m.type === 'afternoon') {
+        return {
+          ...m,
+          title: `[Defrosted Vault] ${item.mealTitle}`,
+          estimatedCost: 0,
+          cookTimeMinutes: 5,
+          isSwapped: true,
+          swapInfo: {
+            swappedIngredient: 'Pulled from Freezer Vault',
+            newCost: 0,
+            costSavingsPercent: 100,
+            rationale: 'Prepped in Big Pot batch. ₦0 grocery spend today, 5 min reheat.'
+          }
+        };
+      }
+      return m;
+    }));
+  };
+
+  const handleDeleteFreezerItem = (itemId: string) => {
+    setFreezerVault(prev => prev.filter(i => i.id !== itemId));
+  };
+
+  const handleApplyRescueMeal = (originalMealId: string, rescuedMeal: Meal) => {
+    setMeals(prev => prev.map(m => m.id === originalMealId ? rescuedMeal : m));
+    awardXp(35, 'Applied Instant Fridge Rescue');
+    completeQuestAction('vault_stash');
+  };
+
+  const handlePantryBudgetDeduction = (savedAmount: number) => {
+    setProfile(prev => ({
+      ...prev,
+      monthlyBudget: Math.max(prev.monthlyBudget - savedAmount, 1000)
+    }));
+  };
+
+  const handleAwardFoodiePoints = (pts: number) => {
+    setProfile(prev => ({
+      ...prev,
+      foodiePoints: prev.foodiePoints + pts
+    }));
+  };
+
+  const handleToggleFavorite = (meal: Meal) => {
+    setFavorites(prev => {
+      const exists = prev.some(m => m.id === meal.id);
+      if (exists) {
+        return prev.filter(m => m.id !== meal.id);
+      } else {
+        return [...prev, meal];
+      }
+    });
+  };
+
+  // If the user has not completed the onboarding flow, display the dedicated Sign Up & Goal & Budget Experience!
+  if (!profile.hasOnboarded) {
+    return (
+      <SignUpOnboardingFlow
+        onComplete={handleFinishSignUp}
+        initialProfile={profile}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0C0C0E] text-[#1A1A1A] dark:text-[#F3F4F6] flex flex-col font-sans transition-colors duration-200">
+      {/* Deep Maroon Brand Banner & Navigation */}
+      <Navbar
+        profile={profile}
+        activeTab={activeTab}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode(prev => !prev)}
+        onSelectTab={setActiveTab}
+        onOpenOnboarding={() => setProfile(p => ({ ...p, hasOnboarded: false }))}
+        onOpenTravelMode={() => setIsTravelModeOpen(true)}
+        onOpenCookbook={() => setIsCookbookOpen(true)}
+        onOpenSendFoodHome={() => setIsSendFoodHomeOpen(true)}
+        onOpenPro={() => setIsProModalOpen(true)}
+        onOpenSql={() => setIsSqlModalOpen(true)}
+        onOpenPantryScanner={() => setIsPantryScannerOpen(true)}
+        onOpenMarketRun={() => {
+          completeQuestAction('market_view');
+          setIsMarketRunOpen(true);
+        }}
+        onOpenFreezerVault={() => setIsFreezerVaultOpen(true)}
+        onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}
+        freezerCount={freezerVault.reduce((acc, curr) => acc + curr.portionsRemaining, 0)}
+      />
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        {/* TAB 1: TODAY'S MEALS (HOME SCREEN) */}
+        {activeTab === 'today' && (() => {
+          // Sequential meal ordering: Morning, Afternoon, Evening
+          const mealOrderMap: Record<string, number> = { morning: 1, afternoon: 2, evening: 3 };
+          const orderedMeals = [...todaysMeals].sort(
+            (a, b) => (mealOrderMap[a.type] || 99) - (mealOrderMap[b.type] || 99)
+          );
+
+          const morningMeal = orderedMeals.find(m => m.type === 'morning');
+          const afternoonMeal = orderedMeals.find(m => m.type === 'afternoon');
+          const eveningMeal = orderedMeals.find(m => m.type === 'evening');
+
+          // Find the next meal that needs a snap
+          const nextUnverifiedMeal = orderedMeals.find(m => !m.photoVerified) || orderedMeals[0];
+          const allVerifiedToday = orderedMeals.length > 0 && orderedMeals.every(m => m.photoVerified);
+          const chefTier = getChefTier(profile.xp ?? profile.foodiePoints ?? 380);
+
+          return (
+            <div className="space-y-6 max-w-4xl mx-auto">
+              {/* Clean Compact Day Status & Carousel */}
+              <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-zinc-800 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#7A1C2C] dark:text-rose-400">
+                      Day {selectedDay} of 28
+                    </span>
+                    <span className="text-stone-300 dark:text-zinc-600">·</span>
+                    <span className="text-xs text-stone-600 dark:text-zinc-300 font-semibold">
+                      Morning, Afternoon & Evening Nutrition
+                    </span>
+                    {selectedDay === todaysCycleDay && (
+                      <span className="text-[10px] font-bold text-[#2ECC71] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        🟢 Today
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-stone-400 dark:text-zinc-500 font-mono mt-0.5 flex items-center gap-1.5">
+                    <span>Next Rotation: <strong className="text-stone-700 dark:text-zinc-300">{countdown.formatted}</strong></span>
+                    <span>·</span>
+                    <span>Sequential Protein: <strong className="text-stone-700 dark:text-zinc-300 capitalize">{todaysMeals[0]?.proteinSourceType.replace('_', ' ')}</strong></span>
+                  </div>
+                </div>
+
+                {/* Day Switcher Carousel */}
+                <div className="flex items-center gap-2 self-start sm:self-center">
+                  <button
+                    onClick={() => setSelectedDay(d => Math.max(1, d - 1))}
+                    disabled={selectedDay === 1}
+                    className="w-8 h-8 rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-stone-50 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-600 dark:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    title="Previous Day"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-stone-100 dark:bg-zinc-800 rounded-xl text-xs font-mono font-bold text-stone-800 dark:text-zinc-200">
+                    <Calendar className="w-3.5 h-3.5 text-[#7A1C2C] dark:text-rose-400" />
+                    <span>Day {selectedDay} / 28</span>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedDay(d => Math.min(28, d + 1))}
+                    disabled={selectedDay === 28}
+                    className="w-8 h-8 rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-stone-50 dark:hover:bg-zinc-700 flex items-center justify-center text-stone-600 dark:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    title="Next Day"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  {selectedDay !== todaysCycleDay && (
+                    <button
+                      onClick={() => setSelectedDay(todaysCycleDay)}
+                      className="ml-1 text-xs font-bold text-[#7A1C2C] dark:text-rose-400 hover:underline bg-stone-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl border border-stone-200 dark:border-zinc-700 cursor-pointer"
+                    >
+                      Today
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. THE PLACE WHERE THEY CAN CLICK TO SNAP FOOD TO UNLOCK A STREAK */}
+              <div className="bg-gradient-to-r from-[#7A1C2C] via-[#631623] to-[#450e18] text-white rounded-3xl p-5 sm:p-6 shadow-md border border-[#7A1C2C]/50 relative overflow-hidden">
+                <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-44 h-44 rounded-full bg-white/5 pointer-events-none" />
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-black uppercase tracking-wider">
+                        <Flame className="w-3.5 h-3.5 fill-amber-300 text-amber-300 animate-pulse" />
+                        <span>{profile.streak}-Day Nutrition Streak</span>
+                      </span>
+                      <button
+                        onClick={() => setIsAccomplishmentOpen(true)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/90 text-xs font-bold transition-colors cursor-pointer"
+                        title="View Trophy & Accomplishment Room"
+                      >
+                        <span>{chefTier.badgeEmoji} Rank {chefTier.level}: {chefTier.title}</span>
+                      </button>
+                    </div>
+
+                    <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                      {allVerifiedToday
+                        ? '🎉 All 3 Plates Authenticated Today!'
+                        : 'Snap Your Food to Authenticate & Keep Your Streak'}
+                    </h3>
+                    <p className="text-xs text-white/80 max-w-xl">
+                      Take a photo of your food before eating. Photo verification authenticates your daily ritual, unlocks streak multipliers, and earns +50 Clever XP.
+                    </p>
+
+                    {/* Today's 3 Meals Ritual Progress */}
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      {[
+                        { label: 'Morning', icon: '🌅', meal: morningMeal },
+                        { label: 'Afternoon', icon: '☀️', meal: afternoonMeal },
+                        { label: 'Evening', icon: '🌙', meal: eveningMeal }
+                      ].map(({ label, icon, meal: m }) => (
+                        <div
+                          key={label}
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold ${
+                            m?.photoVerified
+                              ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/40'
+                              : 'bg-white/10 text-white/70 border border-white/10'
+                          }`}
+                        >
+                          <span>{icon}</span>
+                          <span>{label}:</span>
+                          <span className="font-bold">
+                            {m?.photoVerified ? '✓ Snapped' : 'Pending'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Primary Snap Action Button */}
+                  <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFX.playTap();
+                        if (nextUnverifiedMeal) {
+                          setPhotoLockMeal(nextUnverifiedMeal);
+                        }
+                      }}
+                      className="px-6 py-3.5 rounded-2xl bg-[#2ECC71] hover:bg-[#27ae60] active:scale-95 text-white font-black text-sm shadow-lg shadow-[#2ECC71]/30 flex items-center justify-center gap-2 transition-all cursor-pointer group"
+                    >
+                      <Camera className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                      <span>{allVerifiedToday ? '📸 Snap Another Photo' : '📸 Click to Snap Food & Unlock Streak'}</span>
+                    </button>
+
+                    <div className="text-[11px] text-center text-white/60 font-mono">
+                      Target: {nextUnverifiedMeal?.title ? `"${nextUnverifiedMeal.title.slice(0, 24)}..."` : 'Today’s Meal'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. WHAT THE PERSON SHOULD EAT: MORNING, AFTERNOON, AND EVENING */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black uppercase tracking-wider text-stone-500 dark:text-zinc-400">
+                      Today's Daily Rotation Meals (3 Plates)
+                    </span>
+                  </div>
+                  <span className="text-xs text-stone-400 dark:text-zinc-500 font-mono">
+                    Sequential Protein Cycle
+                  </span>
+                </div>
+
+                {orderedMeals.map((meal) => (
+                  <DailyMealCard
+                    key={meal.id}
+                    meal={meal}
+                    profile={profile}
+                    isFavorite={favorites.some(f => f.id === meal.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                    onOpenPhotoLock={(m) => setPhotoLockMeal(m)}
+                    onDirectPhotoVerified={handleVerifyMealPhotoDirect}
+                    onOpenInflationSwap={(m) => setInflationSwapMeal(m)}
+                    onOpenFridgeRescue={(m) => {
+                      setFridgeRescueMeal(m);
+                      setIsFridgeRescueOpen(true);
+                    }}
+                    onOpenHandPortion={(m) => {
+                      setHandGuideMeal(m);
+                      setIsHandGuideOpen(true);
+                    }}
+                    onSendToFreezerVault={handleAddFreezerPortions}
+                    onOrderFromVendors={handleOrderFromVendors}
+                    onLogMealStreak={(m) => {
+                      soundFX.playStreakCelebration();
+                      setIsCelebrationOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* TAB 2: 28-DAY ROTATIONAL PLAN GRID */}
+        {activeTab === 'rotation' && (
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 space-y-6">
+            <div>
+              <h3 className="text-xl font-black text-stone-900">28-Day Rotational Meal Plan</h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Deterministic rotation featuring sequential protein cycling (Fish → Poultry → Eggs/Dairy → Legumes → Beef) with zero consecutive repetition.
+              </p>
+            </div>
+
+            {/* 28-Day Matrix Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+              {Array.from({ length: 28 }).map((_, i) => {
+                const dayNum = i + 1;
+                const dayMeals = meals.filter(m => m.dayNumber === dayNum);
+                const isCurrent = dayNum === selectedDay;
+                const proteinSource = dayMeals[0]?.proteinSourceType || 'fish';
+
+                return (
+                  <button
+                    key={dayNum}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDay(dayNum);
+                      soundFX.playTap();
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      isCurrent
+                        ? 'border-[#7A1C2C] bg-[#7A1C2C]/5 shadow-xs font-bold text-[#7A1C2C]'
+                        : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold">Day {dayNum}</span>
+                      <span className="text-[10px] text-stone-400">
+                        {proteinSource === 'fish' ? '🐟' : proteinSource === 'poultry' ? '🍗' : proteinSource === 'eggs_dairy' ? '🍳' : proteinSource === 'legumes_plant' ? '🫘' : '🥩'}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-stone-500 font-mono mt-1 capitalize truncate">
+                      {proteinSource.replace('_', ' ')}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Day Expanded Preview */}
+            <div className="pt-4 border-t border-stone-100">
+              <h4 className="font-bold text-stone-900 text-sm mb-4">
+                Inspection for Day {selectedDay}:
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {todaysMeals.map(meal => (
+                  <div key={meal.id} className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[#7A1C2C] uppercase tracking-wider text-[10px]">
+                        {meal.type === 'morning' ? 'Morning Breakfast' : 'Afternoon Dinner'}
+                      </span>
+                      <span className="font-mono text-stone-500">{meal.calories} kcal</span>
+                    </div>
+                    <div className="font-bold text-stone-900 text-sm">{meal.title}</div>
+                    <p className="text-stone-600 line-clamp-2">{meal.description}</p>
+                    <div className="font-mono text-stone-600 pt-1">
+                      {meal.protein}g P · {meal.carbs}g C · {meal.fat}g F · {country.currencySymbol}{meal.estimatedCost.toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: BODY STATISTICS & DAILY CALORIE INTAKE */}
+        {activeTab === 'analytics' && (
+          <BodyStatisticsTab
+            profile={profile}
+            macros={macros}
+            todaysMeals={todaysMeals}
+            freezerVault={freezerVault}
+            country={country}
+            onOpenHandGuide={(m) => {
+              setHandGuideMeal(m);
+              setIsHandGuideOpen(true);
+            }}
+            onOpenMarketRun={() => {
+              completeQuestAction('market_view');
+              setIsMarketRunOpen(true);
+            }}
+            onOpenFreezerVault={() => setIsFreezerVaultOpen(true)}
+            onOpenLedger={() => setIsLedgerOpen(true)}
+            onOpenPantryScanner={() => setIsPantryScannerOpen(true)}
+            onOpenSendFoodHome={() => setIsSendFoodHomeOpen(true)}
+            onOpenOnboarding={() => setProfile(p => ({ ...p, hasOnboarded: false }))}
+            onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}
+          />
+        )}
+
+        {/* TAB 3: POCKET WALLET FULL VIEW */}
+        {activeTab === 'wallet' && (
+          <div className="max-w-3xl mx-auto space-y-6">
+            <PocketMoneyWallet
+              profile={profile}
+              currentDayMeals={todaysMeals}
+              onUpdateDailySpend={() => {}}
+            />
+          </div>
+        )}
+
+        {/* TAB 4: MILE 12 / BODIJA CROWDSOURCING LEDGER */}
+        {activeTab === 'ledger' && (
+          <div className="max-w-4xl mx-auto">
+            <MarketLedgerModal
+              profile={profile}
+              isOpen={true}
+              onClose={() => setActiveTab('today')}
+              onPointsAwarded={handleAwardFoodiePoints}
+            />
+          </div>
+        )}
+
+        {/* TAB 5: VERIFIED VENDORS */}
+        {activeTab === 'vendors' && (
+          <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-zinc-800 p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-black text-stone-900 dark:text-zinc-100">
+                  Verified Vendor Ecosystem ({country.name})
+                </h3>
+                <p className="text-xs text-stone-500 dark:text-zinc-400 mt-0.5">
+                  Curated tier of high-trust local restaurants and bulk food suppliers vetted for price stability and hygiene.
+                </p>
+              </div>
+
+              {selectedVendorMeal && (
+                <button
+                  onClick={() => setSelectedVendorMeal(null)}
+                  className="self-start sm:self-center px-3 py-1.5 rounded-xl border border-stone-200 dark:border-zinc-700 bg-stone-50 dark:bg-zinc-800 text-xs font-bold text-stone-700 dark:text-zinc-300 hover:bg-stone-100 cursor-pointer"
+                >
+                  Show All Vendors ({activeVendors.length})
+                </button>
+              )}
+            </div>
+
+            {/* Context Banner if navigated from a meal card's "Order from Verified Vendors" link */}
+            {selectedVendorMeal && (
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/20 border-2 border-amber-300 dark:border-amber-700/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-xl shrink-0">
+                    🛍️
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
+                      Ordering for {selectedVendorMeal.type.toUpperCase()} · Day {selectedVendorMeal.dayNumber}
+                    </div>
+                    <div className="text-base font-extrabold text-stone-900 dark:text-zinc-100">
+                      "{selectedVendorMeal.title}"
+                    </div>
+                    <div className="text-xs text-stone-600 dark:text-zinc-300 mt-0.5">
+                      Vetted restaurants & bulk ingredient suppliers in {country.name}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <a
+                    href={country.deliveryPartners[0] ? `${country.deliveryPartners[0].urlPrefix}${encodeURIComponent(selectedVendorMeal.readyToEatDeliveryQuery)}` : 'https://chowdeck.com/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-[#7A1C2C] hover:bg-[#631623] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-transform active:scale-95"
+                  >
+                    <span>Instant Order Dish</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
+                  </a>
+                  <button
+                    onClick={() => setSelectedVendorMeal(null)}
+                    className="px-3 py-2 bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 text-xs font-semibold rounded-xl border border-stone-200 dark:border-zinc-700 hover:bg-stone-50 cursor-pointer"
+                  >
+                    Clear Filter
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeVendors.map((vendor) => (
+                <div key={vendor.id} className="p-5 rounded-2xl bg-stone-50 dark:bg-zinc-850 border border-stone-200 dark:border-zinc-800 text-xs space-y-3 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[10px] text-stone-500 uppercase">{vendor.category.replace('_', ' ')}</span>
+                      <span className="font-bold text-[#2ECC71] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-800 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Verified
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-stone-900 dark:text-zinc-100 text-sm">{vendor.name}</h4>
+                    <p className="text-stone-600 dark:text-zinc-400">{vendor.specialty}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-stone-200 dark:border-zinc-750 space-y-2">
+                    <div className="flex justify-between text-stone-500 dark:text-zinc-400 font-mono">
+                      <span>Hygiene Score: <strong className="text-stone-800 dark:text-zinc-200">{vendor.hygieneScore}%</strong></span>
+                      <span>Price Stability: <strong className="text-stone-800 dark:text-zinc-200">{vendor.priceStabilityScore}%</strong></span>
+                    </div>
+
+                    <a
+                      href={vendor.partnerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2 bg-[#7A1C2C] hover:bg-[#631623] text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span>Order via Partner</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Level Up Fanfare Floating Toast */}
+      {levelUpToast && (
+        <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-top-4 duration-300">
+          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-stone-950 p-4 rounded-2xl shadow-2xl flex items-center gap-3.5 border-2 border-amber-300">
+            <span className="text-3xl animate-bounce">👑</span>
+            <div>
+              <div className="text-[10px] uppercase font-mono font-black tracking-wider text-amber-950">
+                ⭐ Level Up Fanfare! ⭐
+              </div>
+              <div className="font-black text-sm">
+                Promoted to Rank {levelUpToast.level}: {levelUpToast.title}!
+              </div>
+            </div>
+            <button
+              onClick={() => setLevelUpToast(null)}
+              className="text-stone-950/70 hover:text-stone-950 p-1 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="bg-white dark:bg-[#18181B] border-t border-stone-200 dark:border-zinc-800 py-6 text-center text-xs text-stone-500 dark:text-zinc-400 mt-12 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-black text-[#7A1C2C] dark:text-rose-400">CleverDish</span>
+            <span>·</span>
+            <span>Smart Nutrition, 28-Day Rotation & Local Budget Engine</span>
+          </div>
+          <div className="flex items-center gap-4 text-stone-400 dark:text-zinc-500 font-mono text-[11px]">
+            <span>Active: {country.name} ({country.currency})</span>
+            <span>·</span>
+            <button onClick={() => setProfile(p => ({ ...p, hasOnboarded: false }))} className="hover:text-stone-700 dark:hover:text-zinc-300 underline font-bold cursor-pointer">
+              Restart Sign Up / Goal Setup
+            </button>
+            <span>·</span>
+            <button onClick={() => setIsSqlModalOpen(true)} className="hover:text-stone-700 dark:hover:text-zinc-300 underline cursor-pointer">
+              SQL Ledger DDL
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* MODALS */}
+      {photoLockMeal && (
+        <PhotoLockModal
+          meal={photoLockMeal}
+          userId={profile.id}
+          isOpen={!!photoLockMeal}
+          onClose={() => setPhotoLockMeal(null)}
+          onSuccess={handlePhotoVerificationSuccess}
+        />
+      )}
+
+      {inflationSwapMeal && (
+        <InflationSwapModal
+          meal={inflationSwapMeal}
+          profile={profile}
+          isOpen={!!inflationSwapMeal}
+          onClose={() => setInflationSwapMeal(null)}
+          onApplySwap={handleApplyInflationSwap}
+        />
+      )}
+
+      <StreakCelebration
+        streak={profile.streak}
+        foodiePoints={profile.xp ?? profile.foodiePoints ?? 380}
+        isOpen={isCelebrationOpen}
+        onClose={() => setIsCelebrationOpen(false)}
+        onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}
+      />
+
+      <AccomplishmentCenterModal
+        isOpen={isAccomplishmentOpen}
+        onClose={() => setIsAccomplishmentOpen(false)}
+        profile={profile}
+        quests={dailyQuests}
+        badges={badges}
+        challenges={challenges}
+        onClaimQuest={handleClaimQuest}
+        onJoinChallenge={handleJoinChallenge}
+        onLeaveChallenge={handleLeaveChallenge}
+        onClaimChallengeReward={handleClaimChallengeReward}
+      />
+
+      <MarketLedgerModal
+        profile={profile}
+        isOpen={isLedgerOpen}
+        onClose={() => setIsLedgerOpen(false)}
+        onPointsAwarded={handleAwardFoodiePoints}
+      />
+
+      <PantryScannerModal
+        profile={profile}
+        isOpen={isPantryScannerOpen}
+        onClose={() => setIsPantryScannerOpen(false)}
+        onSubtractBudget={handlePantryBudgetDeduction}
+      />
+
+      <TravelModeModal
+        profile={profile}
+        isOpen={isTravelModeOpen}
+        onClose={() => setIsTravelModeOpen(false)}
+        onUpdateCountry={handleUpdateCountry}
+      />
+
+      <CookbookModal
+        profile={profile}
+        favorites={favorites}
+        isOpen={isCookbookOpen}
+        onClose={() => setIsCookbookOpen(false)}
+        onSelectMeal={(m) => setSelectedDay(m.dayNumber)}
+      />
+
+      <SendFoodHomeModal
+        profile={profile}
+        isOpen={isSendFoodHomeOpen}
+        onClose={() => setIsSendFoodHomeOpen(false)}
+      />
+
+      <ProSubscriptionModal
+        profile={profile}
+        isOpen={isProModalOpen}
+        onClose={() => setIsProModalOpen(false)}
+        onUpgradePro={() => setProfile(p => ({ ...p, isPro: true }))}
+      />
+
+      <SqlSchemaModal
+        isOpen={isSqlModalOpen}
+        onClose={() => setIsSqlModalOpen(false)}
+      />
+
+      {/* 4 HIGH-IMPACT CULINARY & SOURCING MODALS */}
+      <WeeklyMarketRunModal
+        isOpen={isMarketRunOpen}
+        onClose={() => setIsMarketRunOpen(false)}
+        meals={meals}
+        country={country}
+      />
+
+      <HandPortionGuideModal
+        isOpen={isHandGuideOpen}
+        onClose={() => setIsHandGuideOpen(false)}
+        currentMeal={handGuideMeal || todaysMeals[0] || null}
+      />
+
+      <FridgeRescueModal
+        isOpen={isFridgeRescueOpen}
+        onClose={() => setIsFridgeRescueOpen(false)}
+        meal={fridgeRescueMeal}
+        onApplyRescueMeal={handleApplyRescueMeal}
+        country={country}
+      />
+
+      <FreezerVaultModal
+        isOpen={isFreezerVaultOpen}
+        onClose={() => setIsFreezerVaultOpen(false)}
+        vaultItems={freezerVault}
+        onConsumePortion={handleConsumeFreezerPortion}
+        onAddPortions={handleAddFreezerPortions}
+        onDeleteVaultItem={handleDeleteFreezerItem}
+        todaysMeals={todaysMeals}
+        country={country}
+      />
+    </div>
+  );
+}

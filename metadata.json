@@ -1,0 +1,6 @@
+{
+  "name": "CleverDish",
+  "description": "CleverDish: Smart nutrition and 28-day rotational meal planning with local market budget engines, magic-byte photo-verified daily rituals, and crowdsourced price ledgers.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
