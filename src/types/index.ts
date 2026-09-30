@@ -142,6 +142,33 @@ export interface IngredientItem {
   isPantryAvailable?: boolean;
 }
 
+/** Prototype used by the rotation-plan engine before per-country costing. */
+export interface MealBlueprint {
+  title: string;
+  description: string;
+  visualType: Meal['visualType'];
+  style: Meal['style'];
+  proteinSourceType: Meal['proteinSourceType'];
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  cookTimeMinutes: number;
+  readyToEatQuery: string;
+  ingredients: Array<{
+    name: string;
+    gramWeight: number;
+    baseNGNCost: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+    sourcingLocation: string;
+  }>;
+  prepInstructions: string[];
+}
+
 export interface Meal {
   id: string;
   dayNumber: number; // 1 to 28
@@ -150,7 +177,7 @@ export interface Meal {
   description: string;
   proteinSourceType: 'fish' | 'poultry' | 'eggs_dairy' | 'legumes_plant' | 'beef_lean';
   style: 'indigenous' | 'continental';
-  visualType: 'jollof_bowl' | 'yam_egg_skillet' | 'oatmeal_parfait' | 'beans_plantain' | 'stew_swallow' | 'chicken_salad' | 'pasta_medley';
+  visualType: 'jollof_bowl' | 'yam_egg_skillet' | 'oatmeal_parfait' | 'beans_plantain' | 'stew_swallow' | 'chicken_salad' | 'pasta_medley' | 'grilled_fish';
   calories: number;
   protein: number;
   carbs: number;

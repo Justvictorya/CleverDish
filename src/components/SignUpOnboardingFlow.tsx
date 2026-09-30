@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile, CountryCode, FitnessGoal, StaplePreference } from '../types';
 import { COUNTRIES } from '../data/countries';
+import { LOCAL_STAPLE_COPY } from '../data/cuisineCatalog';
 import { calculateMacros, computeBudgetVerdict } from '../utils/nutrition';
 import {
   Globe,
@@ -111,6 +112,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
   const [xpAnimation, setXpAnimation] = useState<string | null>(null);
 
   const countryConfig = COUNTRIES[country] || COUNTRIES.NG;
+  const localStapleCopy = LOCAL_STAPLE_COPY[country] || LOCAL_STAPLE_COPY.NG;
 
   // Active XP calculation based on progress
   const currentEarnedXp = 50 + (step >= 2 ? 50 : 0) + (step >= 3 ? 50 : 0) + (step >= 4 ? 50 : 0) + (isCrateOpened ? 150 : 0);
@@ -980,9 +982,9 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                   {[
                     {
                       id: 'indigenous',
-                      title: '🇳🇬 Indigenous Farm Staples',
-                      desc: 'Garri, Yam, Plantain, Beans, Fish, Egusi. Farm-fresh micronutrients and best local pricing.',
-                      tag: 'High Value & Abundant'
+                      title: `${countryConfig.flag} ${localStapleCopy.label}`,
+                      desc: `${localStapleCopy.staples.join(', ')}. Priced from ${countryConfig.defaultMarkets[0]} and nearby stores.`,
+                      tag: 'Home Cooking'
                     },
                     {
                       id: 'continental',
@@ -993,7 +995,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                     {
                       id: 'balanced',
                       title: '⚖️ Balanced Glocal Fusion (Recommended)',
-                      desc: 'Smart alternation: light morning oatmeal & eggs paired with hearty afternoon/evening local plates.',
+                      desc: `Smart alternation: light modern mornings paired with hearty ${countryConfig.name} plates at home.`,
                       tag: 'Most Popular'
                     }
                   ].map((s) => (

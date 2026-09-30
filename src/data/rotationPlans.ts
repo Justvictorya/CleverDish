@@ -1,5 +1,6 @@
-import { Meal, CountryCode, StaplePreference } from '../types';
+import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
 import { COUNTRIES } from './countries';
+import { COUNTRY_CUISINES, resolveCuisineSources } from './cuisineCatalog';
 
 // 5-stage sequential protein rotation cycle
 const PROTEIN_ROTATION: Array<'fish' | 'poultry' | 'eggs_dairy' | 'legumes_plant' | 'beef_lean'> = [
@@ -9,32 +10,6 @@ const PROTEIN_ROTATION: Array<'fish' | 'poultry' | 'eggs_dairy' | 'legumes_plant
   'legumes_plant',
   'beef_lean'
 ];
-
-interface MealBlueprint {
-  title: string;
-  description: string;
-  visualType: Meal['visualType'];
-  style: 'indigenous' | 'continental';
-  proteinSourceType: Meal['proteinSourceType'];
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  cookTimeMinutes: number;
-  readyToEatQuery: string;
-  ingredients: Array<{
-    name: string;
-    gramWeight: number;
-    baseNGNCost: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    fiber: number;
-    sourcingLocation: string;
-  }>;
-  prepInstructions: string[];
-}
 
 // Indigenous Morning Meal Prototypes
 const INDIGENOUS_BREAKFASTS: Record<Meal['proteinSourceType'], MealBlueprint[]> = {
@@ -918,20 +893,26 @@ function getFoodstuffSourcing(countryCode: CountryCode, ingredients: Array<{ nam
       }
     ];
   } else {
+    // Every remaining country uses its own markets, currency and delivery partner
+    const country = COUNTRIES[countryCode];
+    const partner = country.deliveryPartners[0];
+    const carbCost = ingredients[0]?.cost || 4.5;
+    const proteinCost = ingredients[1]?.cost || 7;
+
     return [
       {
         item: ingredients[0]?.name || 'Staple Carb',
-        marketName: 'Union Square Greenmarket / ALDI',
-        onlineStoreName: 'Instacart Fast Grocery Delivery',
-        onlineStoreUrl: 'https://www.instacart.com/',
-        unitPrice: `$${ingredients[0]?.cost || 4.50}`
+        marketName: country.defaultMarkets[0],
+        onlineStoreName: partner.name,
+        onlineStoreUrl: partner.urlPrefix,
+        unitPrice: `${country.currencySymbol}${carbCost}`
       },
       {
         item: ingredients[1]?.name || 'Fresh Protein',
-        marketName: 'Whole Foods Market / Local Butcher',
-        onlineStoreName: 'Amazon Fresh',
-        onlineStoreUrl: 'https://www.amazon.com/alm/storefront',
-        unitPrice: `$${ingredients[1]?.cost || 7.00}`
+        marketName: country.defaultMarkets[1] || country.defaultMarkets[0],
+        onlineStoreName: partner.name,
+        onlineStoreUrl: partner.urlPrefix,
+        unitPrice: `${country.currencySymbol}${proteinCost}`
       }
     ];
   }
@@ -945,6 +926,9 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
     : (1 / (COUNTRIES.NG.exchangeRateToUSD / country.exchangeRateToUSD));
 
   const meals: Meal[] = [];
+
+  // Local cuisine catalogue (undefined for Nigeria, which uses the built-in pools)
+  const localCuisine = COUNTRY_CUISINES[country.code] || null;
 
   for (let day = 1; day <= 28; day++) {
     // Sequential protein rotation: rotates through 5 protein types deterministically
@@ -967,8 +951,27 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       afternoonStyle = 'indigenous';
     }
 
-    const morningSource = morningStyle === 'indigenous' ? INDIGENOUS_BREAKFASTS : CONTINENTAL_BREAKFASTS;
-    const afternoonSource = afternoonStyle === 'indigenous' ? INDIGENOUS_AFTERNOONS : CONTINENTAL_AFTERNOONS;
+    // Prefer the user's own country catalogue for "local" styles; only fall back
+    // to the Nigerian/continental pools when no local catalogue exists.
+    const localSources = resolveCuisineSources(country.code, morningStyle, afternoonStyle);
+
+    const morningSource = localSources.morning
+      ?? (morningStyle === 'indigenous' ? INDIGENOUS_BREAKFASTS : CONTINENTAL_BREAKFASTS);
+    const afternoonSource = localSources.afternoon
+      ?? (afternoonStyle === 'indigenous' ? INDIGENOUS_AFTERNOONS : CONTINENTAL_AFTERNOONS);
+
+    // Evening follows the morning style, and reuses the local mains when present
+    const eveningSource = morningStyle === 'indigenous'
+      ? (localCuisine?.mains ?? INDIGENOUS_EVENING)
+      : CONTINENTAL_EVENING;
+
+    const morningIsLocal = Boolean(localSources.morning);
+    const afternoonIsLocal = Boolean(localSources.afternoon);
+    const eveningIsLocal = morningStyle === 'indigenous' && Boolean(localCuisine);
+
+    // Keep authentic in-country sourcing labels for catalogue meals
+    const sourcingLabel = (ing: { name: string; sourcingLocation: string }, isLocal: boolean) =>
+      isLocal ? ing.sourcingLocation : `${country.defaultMarkets[0]} (${ing.name})`;
 
     const morningPrototypes = morningSource[proteinType];
     const afternoonPrototypes = afternoonSource[proteinType];
@@ -976,10 +979,14 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
     const morningProto = morningPrototypes[(day - 1) % morningPrototypes.length];
     const afternoonProto = afternoonPrototypes[(day - 1) % afternoonPrototypes.length];
 
-    // Convert costs to regional currency
+    // Convert costs to regional currency. Every non-Nigerian pool is written on
+    // a Naira reference basis, so each country applies its price index to the
+    // whole basket — otherwise the shared continental pools land far below the
+    // `minimumDailyFloor` declared in countries.ts.
+    const priceIndex = localCuisine?.priceIndex ?? 1;
     const formatCost = (baseCost: number) => {
       if (country.code === 'NG') return baseCost;
-      const converted = baseCost * currencyRateMultiplier;
+      const converted = baseCost * currencyRateMultiplier * priceIndex;
       return Math.round(converted * 10) / 10;
     };
 
@@ -992,7 +999,7 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       carbs: ing.carbs,
       fat: ing.fat,
       fiber: ing.fiber,
-      sourcingLocation: country.code === 'NG' ? ing.sourcingLocation : `${country.defaultMarkets[0]} (${ing.name})`
+      sourcingLocation: country.code === 'NG' ? ing.sourcingLocation : sourcingLabel(ing, morningIsLocal)
     }));
 
     const afternoonIngredients = afternoonProto.ingredients.map((ing, idx) => ({
@@ -1004,11 +1011,11 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       carbs: ing.carbs,
       fat: ing.fat,
       fiber: ing.fiber,
-      sourcingLocation: country.code === 'NG' ? ing.sourcingLocation : `${country.defaultMarkets[0]} (${ing.name})`
+      sourcingLocation: country.code === 'NG' ? ing.sourcingLocation : sourcingLabel(ing, afternoonIsLocal)
     }));
 
-    const morningTotalCost = morningIngredients.reduce((acc, i) => acc + i.cost, 0);
-    const afternoonTotalCost = afternoonIngredients.reduce((acc, i) => acc + i.cost, 0);
+    const morningTotalCost = Math.round(morningIngredients.reduce((acc, i) => acc + i.cost, 0) * 100) / 100;
+    const afternoonTotalCost = Math.round(afternoonIngredients.reduce((acc, i) => acc + i.cost, 0) * 100) / 100;
 
     // Morning Meal
     meals.push({
@@ -1060,8 +1067,7 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       photoVerified: false
     });
 
-    // Evening Meal (Dinner)
-    const eveningSource = morningStyle === 'indigenous' ? INDIGENOUS_EVENING : CONTINENTAL_EVENING;
+    // Evening Meal (Dinner) — eveningSource resolved above
     const eveningPrototypes = eveningSource[proteinType];
     const eveningProto = eveningPrototypes[(day - 1) % eveningPrototypes.length];
 
@@ -1074,10 +1080,10 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       carbs: ing.carbs,
       fat: ing.fat,
       fiber: ing.fiber,
-      sourcingLocation: country.code === 'NG' ? ing.sourcingLocation : `${country.defaultMarkets[0]} (${ing.name})`
+      sourcingLocation: country.code === 'NG' ? ing.sourcingLocation : sourcingLabel(ing, eveningIsLocal)
     }));
 
-    const eveningTotalCost = eveningIngredients.reduce((acc, i) => acc + i.cost, 0);
+    const eveningTotalCost = Math.round(eveningIngredients.reduce((acc, i) => acc + i.cost, 0) * 100) / 100;
 
     meals.push({
       id: `meal_d${day}_evening`,

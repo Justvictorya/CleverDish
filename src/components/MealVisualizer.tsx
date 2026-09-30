@@ -170,6 +170,19 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
               </div>
             )}
 
+            {/* Visualizer Type 6: Grilled Fish */}
+            {visualType === 'grilled_fish' && (
+              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-stone-100">
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-800 via-slate-700 to-stone-600" />
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:5px_5px]" />
+                <div className="absolute top-3 left-4 w-7 h-5 bg-gradient-to-r from-emerald-400 to-lime-500 rounded-lg shadow transform -rotate-12" />
+                <div className="relative z-10 w-14 h-9 bg-gradient-to-r from-orange-400 to-amber-600 rounded-lg shadow-md border border-amber-700/40 transform -rotate-6 flex items-center justify-center">
+                  <span className="text-base">🐟</span>
+                </div>
+                <div className="absolute bottom-3 right-4 w-6 h-6 rounded-full bg-yellow-300/90 shadow-sm border border-yellow-500/50" />
+              </div>
+            )}
+
             {/* Other types */}
             {(visualType === 'chicken_salad' || visualType === 'pasta_medley') && (
               <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-stone-100">
