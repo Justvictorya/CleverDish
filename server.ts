@@ -322,6 +322,13 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // 0. Device registration: get a signed bearer token bound to this profile id
+function describeAiError(err: unknown): string {
+  const e = err as { message?: string; status?: number; code?: number; name?: string };
+  const status = e?.status || e?.code || 'unknown';
+  const message = String(e?.message || err).replace(/AIza[0-9A-Za-z_-]+/g, '[redacted-key]');
+  return `${e?.name || 'Error'} status=${status} ${message}`;
+}
+
 app.post('/api/auth/register', (req, res) => {
   try {
     const { userId } = req.body;
@@ -569,7 +576,7 @@ Return ONLY the raw JSON without markdown code fences.`;
       const parsed = JSON.parse(cleanJson);
       return res.json({ success: true, swap: parsed, engine: 'gemini-3.8-flash' });
     } catch (aiErr) {
-      console.warn('Gemini Inflation Swap fallback invoked:', aiErr);
+      console.warn('[AI] inflation-swap fell back to rules engine:', describeAiError(aiErr));
     }
   }
 
@@ -660,7 +667,10 @@ Return ONLY the raw JSON without markdown code fences.`;
   }
 
   const defaultSwap = {
-    ...baseSwap,
+    gramWeight: baseSwap.gramWeight,
+    costSavingsPercent: baseSwap.costSavingsPercent,
+    macroBreakdown: baseSwap.macroBreakdown,
+    rationale: baseSwap.rationale,
     swappedIngredient: countrySwap.substitute,
     newCost: Math.round(baseCost * baseSwap.savings),
     prepModification: countrySwap.prep
@@ -736,7 +746,7 @@ Respond strictly in JSON without markdown code fences:
       const parsed = JSON.parse(cleanJson);
       return res.json({ success: true, result: parsed, engine: 'gemini-3.8-flash' });
     } catch (aiErr) {
-      console.warn('Gemini vision scan fallback:', aiErr);
+      console.warn('[AI] pantry-scan fell back to rules engine:', describeAiError(aiErr));
     }
   }
 
@@ -849,7 +859,7 @@ Respond strictly in JSON without markdown code fences:
       const parsed = JSON.parse(cleanJson);
       return res.json({ success: true, visualDetails: parsed, engine: 'gemini-3.8-flash' });
     } catch (aiErr) {
-      console.warn('Gemini Meal Visual fallback invoked:', aiErr);
+      console.warn('[AI] meal-visual fell back to rules engine:', describeAiError(aiErr));
     }
   }
 
