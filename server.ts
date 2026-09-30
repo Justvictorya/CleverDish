@@ -573,43 +573,77 @@ Return ONLY the raw JSON without markdown code fences.`;
     }
   }
 
-  // Deterministic local market fallback engine
+  // Deterministic local market fallback engine. Numeric targets and savings are
+  // country-neutral; only the substitute names/prep come from the table below.
   const fallbackSwaps: Record<string, any> = {
     beef: {
-      swappedIngredient: 'Catfish Fillet or Local Boiled Eggs & Soya Chunks',
       gramWeight: '180g',
-      newCost: Math.round(Number(currentCost || 3000) * 0.58),
+      savings: 0.58,
       costSavingsPercent: 42,
       macroBreakdown: { protein: 34, carbs: 2, fat: 12, fiber: 0 },
-      rationale: 'Swapping expensive market beef with fresh farm catfish and local boiled eggs maintains 34g of high biological value protein while immediately shaving 42% off the protein line item.',
-      prepModification: 'Season catfish with crushed uda, garlic, and chili; pan-sear or steam in the stew.'
+      rationale: 'Swapping expensive market beef for a cheaper local lean protein holds the protein line at 34g while cutting the cost of this component by 42%.'
     },
     chicken: {
-      swappedIngredient: 'Cottage Boiled Eggs (3 Large) + Roasted Groundnuts',
       gramWeight: '190g',
-      newCost: Math.round(Number(currentCost || 2800) * 0.62),
+      savings: 0.62,
       costSavingsPercent: 38,
       macroBreakdown: { protein: 32, carbs: 8, fat: 15, fiber: 2 },
-      rationale: 'Local farm eggs paired with roasted groundnuts deliver equivalent branch-chain amino acids (BCAAs) and healthy fats at a fraction of poultry market spikes.',
-      prepModification: 'Soft-boil for 7 minutes and fold into the sauce at the end.'
+      rationale: 'Cheaper staples in the same protein class deliver an equivalent amino acid profile at a fraction of the current poultry market price.'
     },
     quinoa: {
-      swappedIngredient: 'Acha (Fonio Grain) or Nigerian Brown Rice',
       gramWeight: '150g dry (380g cooked)',
-      newCost: Math.round(Number(currentCost || 4500) * 0.45),
+      savings: 0.45,
       costSavingsPercent: 55,
       macroBreakdown: { protein: 11, carbs: 72, fat: 3, fiber: 7 },
-      rationale: 'Acha (Fonio) is an indigenous super-grain from Plateau/Kaduna with a lower glycemic index, superior iron, and exact complex carbohydrate match to imported quinoa.',
-      prepModification: 'Rinse sand thoroughly and steam for 8 minutes with bay leaf.'
+      rationale: 'A local whole grain matches imported quinoa on complex carbohydrate, fiber, and mineral content at a much lower price.'
     },
     salmon: {
-      swappedIngredient: 'Smoked Mackerel (Titus Fish)',
       gramWeight: '160g',
-      newCost: Math.round(Number(currentCost || 6000) * 0.4),
+      savings: 0.4,
       costSavingsPercent: 60,
       macroBreakdown: { protein: 32, carbs: 0, fat: 16, fiber: 0 },
-      rationale: 'Local Atlantic Mackerel delivers identical Omega-3 fatty acid EPA/DHA ratios and protein density at 60% lower market cost.',
-      prepModification: 'Debone cleanly and simmer in tomato-pepper base.'
+      rationale: 'An oily fish from the local catch delivers comparable omega-3 and protein density at roughly 60% below the imported fillet price.'
+    }
+  };
+
+  // Local substitutes per country, so the fallback never suggests Nigerian
+  // foods to someone shopping in another market.
+  const localSwapsByCountry: Record<string, Record<string, { substitute: string; prep: string }>> = {
+    Nigeria: {
+      beef: { substitute: 'Catfish Fillet or Local Boiled Eggs & Soya Chunks', prep: 'Season catfish with crushed uda, garlic, and chili; pan-sear or steam in the stew.' },
+      chicken: { substitute: 'Cottage Boiled Eggs (3 Large) + Roasted Groundnuts', prep: 'Soft-boil for 7 minutes and fold into the sauce at the end.' },
+      quinoa: { substitute: 'Acha (Fonio Grain) or Nigerian Brown Rice', prep: 'Rinse sand thoroughly and steam for 8 minutes with bay leaf.' },
+      salmon: { substitute: 'Smoked Mackerel (Titus Fish)', prep: 'Debone cleanly and simmer in tomato-pepper base.' }
+    },
+    Ghana: {
+      beef: { substitute: 'Smoked Herring or Boiled Eggs & Kontomire', prep: 'Grill the herring until crisp and wilt chopped kontomire (cocoyam leaf) in palm oil.' },
+      chicken: { substitute: 'Boiled Eggs & Koose Stew Beans', prep: 'Simmer black-eyed beans with tomato, ginger, and dried fish; fold in sliced eggs.' },
+      quinoa: { substitute: 'Kinkel (Cracked Corn Dough) or Ghanaian Rice', prep: 'Cook kinkel in a lidded pot until it steams like a firm polenta.' },
+      salmon: { substitute: 'Smoked Herring Flakes or Fresh Tilapia', prep: 'Cure and cold-smoke the fish, then flake over banku or shankuka.' }
+    },
+    Kenya: {
+      beef: { substitute: 'Tilapia Fillet or Eggs & Sukuma Wiki', prep: 'Grill the tilapia with Swahili spice rub; wilt sukuma wiki with onion and tomato.' },
+      chicken: { substitute: 'Boiled Eggs & Nyama Choma', prep: 'Boil the eggs, then finish them in a slow-cooked tomato and sukuma wiki stew.' },
+      quinoa: { substitute: 'Ugali (Maizemeal) or Kenyan Pilau', prep: 'Knead the maize flour with water and steam in a foil-lined pot for 25 minutes.' },
+      salmon: { substitute: 'Fresh Tilapia or Nile Perch', prep: 'Grill whole until the flesh flakes, then serve with kachumbari.' }
+    },
+    'United States': {
+      beef: { substitute: 'Ground Turkey or Extra Eggs', prep: 'Brown the turkey with onion, garlic, and smoked paprika; keep the same seasoning profile.' },
+      chicken: { substitute: 'Extra Eggs + Greek Yogurt', prep: 'Scramble in a nonstick pan and fold through cold Greek yogurt off the heat.' },
+      quinoa: { substitute: 'Pearl Barley or Brown Rice', prep: 'Simmer in stock for 25 minutes, then rest covered for 10.' },
+      salmon: { substitute: 'Frozen Salmon Portions or Canned Tuna', prep: 'Roast at 200°C/400°F for 12 minutes with lemon, or substitute straight from the can.' }
+    },
+    Canada: {
+      beef: { substitute: 'Extra Eggs or Pork Shoulder', prep: 'Braise the pork shoulder slowly with onion and paprika for a cheaper cut with more flavour.' },
+      chicken: { substitute: 'Frozen Chicken Thighs + Eggs', prep: 'Roast the thighs at 220°C/425°F for 25 minutes; boil the eggs alongside.' },
+      quinoa: { substitute: 'Barley or Couscous', prep: 'Simmer in salted water for 12 minutes and drain well.' },
+      salmon: { substitute: 'Frozen Salmon or Smoked Trout', prep: 'Bake from frozen at 200°C/400°F for 18 minutes with dill and lemon.' }
+    },
+    'United Kingdom': {
+      beef: { substitute: 'Minced Beef or Frozen Stewing Steak', prep: 'Brown the mince with onion, carrot, and celery for a long-cooked stew base.' },
+      chicken: { substitute: 'Eggs + Tinned Tuna', prep: 'Boil the eggs, then fold flaked tuna with mayo, celery, and lemon.' },
+      quinoa: { substitute: 'Pearl Barley or Bulgur Wheat', prep: 'Simmer in salted water for 12 minutes and drain well.' },
+      salmon: { substitute: 'Smoked Kippers or Frozen Salmon', prep: 'Grill the kippers for 4 minutes and serve with buttered toast.' }
     }
   };
 
@@ -617,7 +651,21 @@ Return ONLY the raw JSON without markdown code fences.`;
     String(currentIngredient).toLowerCase().includes(k)
   ) || 'chicken';
 
-  const defaultSwap = fallbackSwaps[lookupKey];
+  const baseSwap = fallbackSwaps[lookupKey];
+  const countrySwap = (localSwapsByCountry[country] || localSwapsByCountry.Nigeria)[lookupKey];
+
+  const baseCost = Number(currentCost);
+  if (!Number.isFinite(baseCost) || baseCost <= 0) {
+    return res.status(400).json({ error: 'A positive currentCost is required to price an inflation swap.' });
+  }
+
+  const defaultSwap = {
+    ...baseSwap,
+    swappedIngredient: countrySwap.substitute,
+    newCost: Math.round(baseCost * baseSwap.savings),
+    prepModification: countrySwap.prep
+  };
+
   return res.json({
     success: true,
     swap: defaultSwap,
@@ -692,38 +740,62 @@ Respond strictly in JSON without markdown code fences:
     }
   }
 
-  // Fallback pantry inventory intelligence
-  const mockDetections = [
-    {
-      name: 'White Yam Tubers (2 tubers remaining)',
-      quantity: '2 large tubers',
-      estimatedValue: country === 'Nigeria' ? 4500 : 8,
-      category: 'carb',
-      subtractableFromPlan: true
-    },
-    {
-      name: 'Local Crate Eggs (14 eggs)',
-      quantity: '14 eggs',
-      estimatedValue: country === 'Nigeria' ? 2400 : 5,
-      category: 'protein',
-      subtractableFromPlan: true
-    },
-    {
-      name: 'Vegetable / Red Palm Oil',
-      quantity: '1.2 Litres',
-      estimatedValue: country === 'Nigeria' ? 2100 : 4,
-      category: 'pantry_staple',
-      subtractableFromPlan: true
-    },
-    {
-      name: 'Plum Tomatoes & Scotch Bonnets (Rodo)',
-      quantity: '0.8 kg',
-      estimatedValue: country === 'Nigeria' ? 1200 : 3,
-      category: 'produce',
-      subtractableFromPlan: true
-    }
-  ];
+  // Fallback pantry inventory intelligence. Kept country-specific so a user who
+  // picks a market never has Nigerian staples invented for them.
+  const pantryFallbacks: Record<string, Array<{ name: string; quantity: string; value: number; category: string }>> = {
+    Nigeria: [
+      { name: 'White Yam Tubers (2 tubers remaining)', quantity: '2 large tubers', value: 4500, category: 'carb' },
+      { name: 'Local Crate Eggs (14 eggs)', quantity: '14 eggs', value: 2400, category: 'protein' },
+      { name: 'Vegetable / Red Palm Oil', quantity: '1.2 Litres', value: 2100, category: 'pantry_staple' },
+      { name: 'Plum Tomatoes & Scotch Bonnets (Rodo)', quantity: '0.8 kg', value: 1200, category: 'produce' }
+    ],
+    Ghana: [
+      { name: 'Smoked Herring Flakes', quantity: '200g pack', value: 24, category: 'protein' },
+      { name: 'Waakye Rice & Cowpeas', quantity: '2 kg', value: 22, category: 'carb' },
+      { name: 'Tomatoes & Onions', quantity: '1.5 kg', value: 14, category: 'produce' },
+      { name: 'Shito Pepper Sauce', quantity: '3 bottles', value: 12, category: 'pantry_staple' }
+    ],
+    Kenya: [
+      { name: 'Nile Tilapia Fillets', quantity: '2 fillets', value: 420, category: 'protein' },
+      { name: 'Maizemeal (Ugali) Flour', quantity: '2 kg', value: 210, category: 'carb' },
+      { name: 'Sukuma Wiki Greens', quantity: '1 bunch', value: 95, category: 'produce' },
+      { name: 'Eggs', quantity: '12 tray', value: 180, category: 'protein' }
+    ],
+    'United States': [
+      { name: 'Large Brown Eggs', quantity: 'dozen', value: 5.5, category: 'protein' },
+      { name: 'Rolled Oats', quantity: '2 lb tub', value: 6, category: 'carb' },
+      { name: 'Roma Tomatoes', quantity: '2 lb', value: 4, category: 'produce' },
+      { name: 'Extra Virgin Olive Oil', quantity: '750 ml', value: 11, category: 'pantry_staple' }
+    ],
+    Canada: [
+      { name: 'Large Brown Eggs', quantity: 'dozen', value: 7, category: 'protein' },
+      { name: 'Wild Rice', quantity: '1 kg', value: 12, category: 'carb' },
+      { name: 'Roma Tomatoes', quantity: '2 lb', value: 5, category: 'produce' },
+      { name: 'Canola Oil', quantity: '1 L', value: 8, category: 'pantry_staple' }
+    ],
+    'United Kingdom': [
+      { name: 'Free Range Eggs', quantity: 'dozen', value: 3.8, category: 'protein' },
+      { name: 'Rolled Porridge Oats', quantity: '1 kg', value: 2.4, category: 'carb' },
+      { name: 'Tinned Tomatoes', quantity: '6 tins', value: 3.6, category: 'produce' },
+      { name: 'Unsalted Butter', quantity: '250g', value: 2.6, category: 'pantry_staple' }
+    ]
+  };
 
+  const currencyFallbacks: Record<string, string> = {
+    Nigeria: 'NGN', Ghana: 'GHS', Kenya: 'KES',
+    'United States': 'USD', Canada: 'CAD', 'United Kingdom': 'GBP'
+  };
+
+  const pantryCountry = country || 'Nigeria';
+  const mockDetections = (pantryFallbacks[pantryCountry] || pantryFallbacks.Nigeria).map((item) => ({
+    name: item.name,
+    quantity: item.quantity,
+    estimatedValue: item.value,
+    category: item.category,
+    subtractableFromPlan: true
+  }));
+
+  const pantryCurrency = currencyFallbacks[pantryCountry] || 'NGN';
   const totalSaved = mockDetections.reduce((acc, item) => acc + item.estimatedValue, 0);
 
   return res.json({
@@ -731,7 +803,7 @@ Respond strictly in JSON without markdown code fences:
     result: {
       detectedItems: mockDetections,
       totalBudgetSaved: totalSaved,
-      summary: `Found 4 core kitchen staples in your pantry. We deducted ${currency} ${totalSaved.toLocaleString()} directly from this month's grocery allowance!`
+      summary: `Found ${mockDetections.length} core kitchen staples in your pantry. We deducted ${pantryCurrency} ${totalSaved.toLocaleString()} directly from this month's grocery allowance!`
     },
     engine: 'cleverdish-vision-rule-detector'
   });
@@ -739,7 +811,7 @@ Respond strictly in JSON without markdown code fences:
 
 // 5. AI Meal Visual Representation & Culinary Plating Engine
 app.post('/api/ai/meal-visual', requireAuth, async (req, res) => {
-  const { mealTitle, ingredients = [], style = 'indigenous', proteinType = 'fish' } = req.body;
+  const { mealTitle, ingredients = [], style = 'indigenous', proteinType = 'fish', country = 'Nigeria' } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   const rl = rateLimit(`ai:${clientIp(req)}`, 30, 60 * 60 * 1000);
@@ -781,20 +853,51 @@ Respond strictly in JSON without markdown code fences:
     }
   }
 
-  // Fallback gastronomic plating presentation
+  // Fallback gastronomic plating presentation, kept country-appropriate
+  const platingByCountry: Record<string, { palette: string[]; aroma: string[]; garnish: string }> = {
+    Nigeria: {
+      palette: ['Deep Amber Stew', 'Golden Caramelized Plantain', 'Vibrant Leafy Green'],
+      aroma: ['Smoky charcoal reduction aroma', 'Zesty scotch bonnet and ginger warmth', 'Rich savoury umami depth'],
+      garnish: 'Crushed dried Cameroon pepper slivers, micro-greens, and cold-pressed oil drizzle'
+    },
+    Ghana: {
+      palette: ['Burnt-Taste Jollof Red', 'Golden Waakye Grains', 'Leafy Green Okra'],
+      aroma: ['Toasted waakye smoke', 'Shito pepper heat', 'Tomto stew savoury depth'],
+      garnish: 'Shito oil, finely sliced scotch bonnet, and tomato-flower micro-greens'
+    },
+    Kenya: {
+      palette: ['Golden Ugali Cream', 'Charred Sukuma Wiki Green', 'Tilapia Glaze'],
+      aroma: ['Maizemeal toast aroma', 'Sukuma wiki fresh steam', 'Tomato onion stew depth'],
+      garnish: 'Diced tomato, sliced red onion, and a coriander-leaf finish'
+    },
+    'United States': {
+      palette: ['Golden Sear', 'Bright Herb Green', 'Citrus Zest Accent'],
+      aroma: ['Clean herb sear', 'Fresh citrus lift', 'Warm pan-butter depth'],
+      garnish: 'Lemon zest, chopped parsley, and a light extra-virgin olive oil drizzle'
+    },
+    Canada: {
+      palette: ['Maple Glaze', 'Wild Rice Brown', 'Leafy Green Accent'],
+      aroma: ['Maple caramel warmth', 'Roasted root vegetable sweetness', 'Smoked pepper heat'],
+      garnish: 'Dark maple syrup drizzle, toasted pepitas, and chive slivers'
+    },
+    'United Kingdom': {
+      palette: ['Golden Roast', 'Rich Gravy', 'Garden Green'],
+      aroma: ['Slow-roast beef aroma', 'Yorkshire batter warmth', 'Onion gravy depth'],
+      garnish: 'Crushed black pepper, chive batons, and a pan-gravy reduction'
+    }
+  };
+
+  const plating = platingByCountry[country || 'Nigeria'] || platingByCountry.Nigeria;
+
   return res.json({
     success: true,
     visualDetails: {
       visualTitle: `${mealTitle} Gourmet Plating`,
       platingStyle: "Artisanal glazed ceramic plate, layered with central protein spotlight and colorful accompaniment",
       visualTextures: "Crisp caramelized surface, succulent glistening glaze, aromatic steaming herbs",
-      colorPalette: ["Deep Amber Stew", "Golden Caramelized Plantain", "Vibrant Leafy Green"],
-      aromaAndSensoryNotes: [
-        "Smoky charcoal reduction aroma",
-        "Zesty scotch bonnet and ginger warmth",
-        "Rich savoury umami depth"
-      ],
-      garnishAndFinishing: "Crushed dried Cameroon pepper slivers, micro-greens, and cold-pressed oil drizzle",
+      colorPalette: plating.palette,
+      aromaAndSensoryNotes: plating.aroma,
+      garnishAndFinishing: plating.garnish,
       appetizingHighlight: "Tender, succulent protein with rich macro density and mouth-watering contrast."
     },
     engine: 'cleverdish-plating-rules-engine'
@@ -803,7 +906,13 @@ Respond strictly in JSON without markdown code fences:
 
 // Healthcheck for uptime monitors & deploy platforms
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime(), ts: Date.now() });
+  // Reports only whether a key is configured, never the value itself.
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    ts: Date.now(),
+    aiConfigured: Boolean(process.env.GEMINI_API_KEY)
+  });
 });
 
 // Setup Vite middleware or static serving
