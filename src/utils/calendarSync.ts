@@ -1,6 +1,6 @@
 /**
  * Calendar Synchronization & Automated Daily Rotation Engine
- * foodie automatically shifts meals forward each calendar day at 00:00 (midnight local time)
+ * CleverDish automatically shifts meals forward each calendar day at 00:00 (midnight local time)
  * based on a 28-day protein rotation cycle.
  */
 

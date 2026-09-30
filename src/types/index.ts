@@ -41,7 +41,7 @@ export interface UserProfile {
   currentCountry: CountryCode;
   streak: number;
   lastLoggedDate: string | null;
-  foodiePoints: number;
+  cleverPoints: number;
   xp?: number;
   level?: number;
   cleverCoins?: number;

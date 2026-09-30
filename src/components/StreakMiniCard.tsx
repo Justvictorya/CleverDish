@@ -22,7 +22,7 @@ export const StreakMiniCard: React.FC<StreakMiniCardProps> = ({
   const totalCount = todaysMeals.length;
   const isAllVerified = totalCount > 0 && verifiedCount === totalCount;
 
-  const currentXp = profile.xp ?? profile.foodiePoints ?? 380;
+  const currentXp = profile.xp ?? profile.cleverPoints ?? 380;
   const currentTier = getChefTier(currentXp);
   const nextTier = getNextTier(currentXp);
   const tierRange = (nextTier?.minXp ?? 5000) - currentTier.minXp;

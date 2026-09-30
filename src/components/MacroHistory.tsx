@@ -27,6 +27,7 @@ import {
   Info
 } from 'lucide-react';
 import { soundFX } from '../utils/sound';
+import { storageKey } from '../utils/storage';
 
 interface MacroHistoryProps {
   profile: UserProfile;
@@ -54,7 +55,7 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
   const [chartView, setChartView] = useState<'area' | 'comparison' | 'split'>('area');
   const [activeMetric, setActiveMetric] = useState<'calories' | 'protein' | 'carbs' | 'fat'>('calories');
 
-  const historyStorageKey = `foodie_macro_history_${profile.id}_${profile.goal}`;
+  const historyStorageKey = storageKey(`macro_history_${profile.id}_${profile.goal}`);
 
   // Generate or load 7-day trailing records
   const [historyData, setHistoryData] = useState<DailyCalorieRecord[]>(() => {

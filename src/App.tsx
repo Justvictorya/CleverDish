@@ -4,6 +4,7 @@ import { COUNTRIES } from './data/countries';
 import { generate28DayPlan } from './data/rotationPlans';
 import { VERIFIED_VENDORS } from './data/vendors';
 import { calculateMacros, computeBudgetVerdict } from './utils/nutrition';
+import { storageKey } from './utils/storage';
 import { Navbar } from './components/Navbar';
 import { DailyMealCard } from './components/DailyMealCard';
 import { PocketMoneyWallet } from './components/PocketMoneyWallet';
@@ -75,7 +76,7 @@ const DEFAULT_PROFILE: UserProfile = {
   currentCountry: 'NG',
   streak: 3,
   lastLoggedDate: null,
-  foodiePoints: 150,
+  cleverPoints: 150,
   hasOnboarded: false
 };
 
@@ -83,7 +84,7 @@ export default function App() {
   // Persistent local profile
   const [profile, setProfile] = useState<UserProfile>(() => {
     try {
-      const saved = localStorage.getItem('foodie_profile');
+      const saved = localStorage.getItem(storageKey('profile'));
       return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
     } catch {
       return DEFAULT_PROFILE;
@@ -116,7 +117,7 @@ export default function App() {
   // 28-day rotational meal plan state (guarantees morning, afternoon, evening for all 28 days)
   const [meals, setMeals] = useState<Meal[]>(() => {
     try {
-      const saved = localStorage.getItem(`foodie_meals_${profile.country}_${profile.staplePreference}`);
+      const saved = localStorage.getItem(storageKey(`meals_${profile.country}_${profile.staplePreference}`));
       if (saved) {
         const parsed: Meal[] = JSON.parse(saved);
         if (parsed.length >= 84 && parsed.some(m => m.type === 'evening')) {
@@ -124,7 +125,7 @@ export default function App() {
         }
       }
       const fresh = generate28DayPlan(profile.country, profile.staplePreference);
-      localStorage.setItem(`foodie_meals_${profile.country}_${profile.staplePreference}`, JSON.stringify(fresh));
+      localStorage.setItem(storageKey(`meals_${profile.country}_${profile.staplePreference}`), JSON.stringify(fresh));
       return fresh;
     } catch {
       return generate28DayPlan(profile.country, profile.staplePreference);
@@ -137,7 +138,7 @@ export default function App() {
   // Dark mode theme state
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem('foodie_theme');
+      const saved = localStorage.getItem(storageKey('theme'));
       if (saved) return saved === 'dark';
       return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     } catch {
@@ -149,10 +150,10 @@ export default function App() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('foodie_theme', 'dark');
+      localStorage.setItem(storageKey('theme'), 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('foodie_theme', 'light');
+      localStorage.setItem(storageKey('theme'), 'light');
     }
   }, [isDarkMode]);
 
@@ -243,7 +244,7 @@ export default function App() {
 
   const awardXp = (amount: number, reason: string) => {
     setProfile(prev => {
-      const currentXp = prev.xp ?? prev.foodiePoints ?? 380;
+      const currentXp = prev.xp ?? prev.cleverPoints ?? 380;
       const nextXp = currentXp + amount;
       const prevTier = getChefTier(currentXp);
       const nextTier = getChefTier(nextXp);
@@ -259,7 +260,7 @@ export default function App() {
       return {
         ...prev,
         xp: nextXp,
-        foodiePoints: nextXp,
+        cleverPoints: nextXp,
         level: nextTier.level
       };
     });
@@ -285,7 +286,7 @@ export default function App() {
   // Freezer Vault State with Local Storage persistence
   const [freezerVault, setFreezerVault] = useState<FreezerVaultItem[]>(() => {
     try {
-      const saved = localStorage.getItem(`foodie_freezer_${profile.id}`);
+      const saved = localStorage.getItem(storageKey(`freezer_${profile.id}`));
       return saved ? JSON.parse(saved) : [
         {
           id: 'vault_1',
@@ -320,17 +321,17 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem(`foodie_freezer_${profile.id}`, JSON.stringify(freezerVault));
+    localStorage.setItem(storageKey(`freezer_${profile.id}`), JSON.stringify(freezerVault));
   }, [freezerVault, profile.id]);
 
   // Sync profile to localStorage
   useEffect(() => {
-    localStorage.setItem('foodie_profile', JSON.stringify(profile));
+    localStorage.setItem(storageKey('profile'), JSON.stringify(profile));
   }, [profile]);
 
   // Sync meals to localStorage
   useEffect(() => {
-    localStorage.setItem(`foodie_meals_${profile.country}_${profile.staplePreference}`, JSON.stringify(meals));
+    localStorage.setItem(storageKey(`meals_${profile.country}_${profile.staplePreference}`), JSON.stringify(meals));
   }, [meals, profile.country, profile.staplePreference]);
 
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
@@ -517,7 +518,7 @@ export default function App() {
   const handleAwardFoodiePoints = (pts: number) => {
     setProfile(prev => ({
       ...prev,
-      foodiePoints: prev.foodiePoints + pts
+      cleverPoints: prev.cleverPoints + pts
     }));
   };
 
@@ -585,7 +586,7 @@ export default function App() {
           // Find the next meal that needs a snap
           const nextUnverifiedMeal = orderedMeals.find(m => !m.photoVerified) || orderedMeals[0];
           const allVerifiedToday = orderedMeals.length > 0 && orderedMeals.every(m => m.photoVerified);
-          const chefTier = getChefTier(profile.xp ?? profile.foodiePoints ?? 380);
+          const chefTier = getChefTier(profile.xp ?? profile.cleverPoints ?? 380);
 
           return (
             <div className="space-y-6 max-w-4xl mx-auto">
@@ -1057,7 +1058,7 @@ export default function App() {
 
       <StreakCelebration
         streak={profile.streak}
-        foodiePoints={profile.xp ?? profile.foodiePoints ?? 380}
+        cleverPoints={profile.xp ?? profile.cleverPoints ?? 380}
         isOpen={isCelebrationOpen}
         onClose={() => setIsCelebrationOpen(false)}
         onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}

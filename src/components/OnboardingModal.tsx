@@ -69,7 +69,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     currentCountry: country,
     streak: initialProfile?.streak || 3,
     lastLoggedDate: initialProfile?.lastLoggedDate || null,
-    foodiePoints: initialProfile?.foodiePoints || 150
+    cleverPoints: initialProfile?.cleverPoints || 150
   };
 
   const macros = calculateMacros(previewProfile);

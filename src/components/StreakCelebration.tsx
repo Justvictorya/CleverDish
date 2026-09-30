@@ -4,7 +4,7 @@ import { getChefTier } from '../utils/gamification';
 
 interface StreakCelebrationProps {
   streak: number;
-  foodiePoints: number;
+  cleverPoints: number;
   isOpen: boolean;
   onClose: () => void;
   onOpenAccomplishments?: () => void;
@@ -12,14 +12,14 @@ interface StreakCelebrationProps {
 
 export const StreakCelebration: React.FC<StreakCelebrationProps> = ({
   streak,
-  foodiePoints,
+  cleverPoints,
   isOpen,
   onClose,
   onOpenAccomplishments
 }) => {
   if (!isOpen) return null;
 
-  const currentTier = getChefTier(foodiePoints);
+  const currentTier = getChefTier(cleverPoints);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in duration-200">
@@ -81,7 +81,7 @@ export const StreakCelebration: React.FC<StreakCelebrationProps> = ({
             <div className="text-[11px] text-stone-500 dark:text-zinc-400 font-medium">Total Clever XP</div>
             <div className="text-base font-black text-[#2ECC71] flex items-center justify-center gap-1">
               <Trophy className="w-4 h-4 text-amber-500" />
-              <span>{foodiePoints} XP</span>
+              <span>{cleverPoints} XP</span>
             </div>
           </div>
         </div>

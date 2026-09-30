@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
   const dailyAllowance = Math.round(profile.monthlyBudget / 30);
-  const currentXp = profile.xp ?? profile.foodiePoints ?? 380;
+  const currentXp = profile.xp ?? profile.cleverPoints ?? 380;
   const currentTier = getChefTier(currentXp);
 
   return (

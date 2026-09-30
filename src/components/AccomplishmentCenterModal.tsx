@@ -68,7 +68,7 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
 
   if (!isOpen) return null;
 
-  const currentXp = profile.xp ?? profile.foodiePoints ?? 380;
+  const currentXp = profile.xp ?? profile.cleverPoints ?? 380;
   const currentTier = getChefTier(currentXp);
   const nextTier = getNextTier(currentXp);
 

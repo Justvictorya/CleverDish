@@ -13,6 +13,7 @@ import {
   BadgePercent
 } from 'lucide-react';
 import { soundFX } from '../utils/sound';
+import { storageKey } from '../utils/storage';
 import { shareWeeklyMarketListToWhatsApp } from '../utils/whatsappShare';
 
 interface WeeklyMarketRunModalProps {
@@ -41,7 +42,7 @@ export const WeeklyMarketRunModal: React.FC<WeeklyMarketRunModalProps> = ({
   // Aggregate ingredients for first 7 days (or 14 meals)
   const [marketItems, setMarketItems] = useState<ConsolidatedMarketItem[]>(() => {
     try {
-      const saved = localStorage.getItem(`foodie_market_run_${country.code}`);
+      const saved = localStorage.getItem(storageKey(`market_run_${country.code}`));
       if (saved) return JSON.parse(saved);
     } catch {
       // fallback
@@ -118,7 +119,7 @@ export const WeeklyMarketRunModal: React.FC<WeeklyMarketRunModalProps> = ({
   });
 
   useEffect(() => {
-    localStorage.setItem(`foodie_market_run_${country.code}`, JSON.stringify(marketItems));
+    localStorage.setItem(storageKey(`market_run_${country.code}`), JSON.stringify(marketItems));
   }, [marketItems, country.code]);
 
   if (!isOpen) return null;

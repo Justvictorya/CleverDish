@@ -136,7 +136,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
     currentCountry: country,
     streak: 1,
     lastLoggedDate: null,
-    foodiePoints: currentEarnedXp,
+    cleverPoints: currentEarnedXp,
     xp: currentEarnedXp,
     level: currentEarnedXp >= 250 ? 2 : 1,
     cleverCoins: 150,

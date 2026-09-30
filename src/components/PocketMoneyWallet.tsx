@@ -3,6 +3,7 @@ import { UserProfile, Meal } from '../types';
 import { Wallet, Check, AlertCircle, ShoppingCart, TrendingUp, Sparkles, Plus, Minus } from 'lucide-react';
 import { COUNTRIES } from '../data/countries';
 import { soundFX } from '../utils/sound';
+import { storageKey } from '../utils/storage';
 
 interface PocketMoneyWalletProps {
   profile: UserProfile;
@@ -15,7 +16,7 @@ export const PocketMoneyWallet: React.FC<PocketMoneyWalletProps> = ({
   currentDayMeals
 }) => {
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
-  const todayKey = `foodie_wallet_${profile.id}_${new Date().toISOString().slice(0, 10)}`;
+  const todayKey = storageKey(`wallet_${profile.id}_${new Date().toISOString().slice(0, 10)}`);
 
   // Daily Allowance = monthly budget ÷ 30
   const dailyAllowance = Math.round(profile.monthlyBudget / 30);
