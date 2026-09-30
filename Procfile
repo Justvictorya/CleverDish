@@ -1,0 +1,1 @@
+web: NODE_ENV=production DATA_DIR=${DATA_DIR:-data} npm start

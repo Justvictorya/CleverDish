@@ -3,6 +3,7 @@ import { UserProfile } from '../types';
 import { Camera, Sparkles, Check, X, Upload, ShoppingBag, ArrowDownRight, AlertCircle } from 'lucide-react';
 import { COUNTRIES } from '../data/countries';
 import { soundFX } from '../utils/sound';
+import { apiFetch } from '../utils/api';
 
 interface PantryScannerModalProps {
   profile: UserProfile;
@@ -44,7 +45,7 @@ export const PantryScannerModal: React.FC<PantryScannerModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/ai/pantry-scan', {
+      const response = await apiFetch(profile.id, '/api/ai/pantry-scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

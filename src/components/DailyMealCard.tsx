@@ -28,6 +28,7 @@ import {
   Utensils
 } from 'lucide-react';
 import { soundFX } from '../utils/sound';
+import { apiFetch } from '../utils/api';
 import { fireMealStreakConfetti } from '../utils/confetti';
 import { shareMealToWhatsApp } from '../utils/whatsappShare';
 
@@ -99,7 +100,7 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
     setIsLoadingVisual(true);
     setShowAiVisual(true);
     try {
-      const res = await fetch('/api/ai/meal-visual', {
+      const res = await apiFetch(profile.id, '/api/ai/meal-visual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

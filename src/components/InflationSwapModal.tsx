@@ -3,6 +3,7 @@ import { Meal, UserProfile } from '../types';
 import { RefreshCw, ArrowRight, TrendingDown, Check, X, Sparkles, ChefHat } from 'lucide-react';
 import { COUNTRIES } from '../data/countries';
 import { soundFX } from '../utils/sound';
+import { apiFetch } from '../utils/api';
 
 interface InflationSwapModalProps {
   meal: Meal;
@@ -35,7 +36,7 @@ export const InflationSwapModal: React.FC<InflationSwapModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/ai/inflation-swap', {
+      const response = await apiFetch(profile.id, '/api/ai/inflation-swap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

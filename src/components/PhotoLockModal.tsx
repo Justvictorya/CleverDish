@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Meal } from '../types';
 import { Camera, Upload, CheckCircle2, AlertCircle, Sparkles, X, ShieldCheck } from 'lucide-react';
 import { soundFX } from '../utils/sound';
+import { apiFetch } from '../utils/api';
 
 interface PhotoLockModalProps {
   meal: Meal;
@@ -94,12 +95,11 @@ export const PhotoLockModal: React.FC<PhotoLockModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const response = await fetch('/api/streak/verify-photo', {
+      const response = await apiFetch(userId, '/api/streak/verify-photo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           photoBase64: selectedImage,
-          userId,
           mealId: meal.id,
           mealTitle: meal.title
         })

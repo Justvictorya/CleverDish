@@ -13,7 +13,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Ensure data directories exist
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(process.cwd(), 'data'));
 const PHOTOS_DIR = path.resolve(DATA_DIR, 'photos');
 const PRICE_SAMPLES_FILE = path.resolve(DATA_DIR, 'price-samples.json');
 const PRICE_OVERRIDES_FILE = path.resolve(DATA_DIR, 'price-overrides.json');
@@ -157,7 +157,119 @@ if (!fs.existsSync(PRICE_OVERRIDES_FILE)) {
   sanitiseSamples();
 }
 
-// In-memory set of recently verified photo hashes to prevent duplicate/streak farming
+// ---------------- Auth: signed device tokens ----------------
+// Stateless bearer tokens bound to a profile id. Signature is server-only.
+const SERVER_SECRET_FILE = path.resolve(DATA_DIR, '.server-secret');
+
+let serverSecret: string;
+if (!fs.existsSync(SERVER_SECRET_FILE)) {
+  serverSecret = crypto.randomBytes(32).toString('hex');
+  fs.writeFileSync(SERVER_SECRET_FILE, serverSecret, { mode: 0o600 });
+} else {
+  serverSecret = fs.readFileSync(SERVER_SECRET_FILE, 'utf-8').trim();
+}
+
+const AUTH_TOKENS_FILE = path.resolve(DATA_DIR, 'auth-tokens.json');
+
+function loadAuthTokens(): Record<string, string> {
+  try {
+    if (!fs.existsSync(AUTH_TOKENS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(AUTH_TOKENS_FILE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveAuthToken(userId: string, token: string): void {
+  const tokens = loadAuthTokens();
+  tokens[userId] = token;
+  fs.writeFileSync(AUTH_TOKENS_FILE, JSON.stringify(tokens, null, 2));
+}
+
+function signToken(userId: string): string {
+  const sig = crypto.createHmac('sha256', serverSecret).update(userId).digest('base64url');
+  return `${userId}.${sig}`;
+}
+
+function verifyToken(token: string): string | null {
+  if (!token) return null;
+  const idx = token.lastIndexOf('.');
+  if (idx <= 0) return null;
+  const userId = token.slice(0, idx);
+  const sig = token.slice(idx + 1);
+  const expected = crypto.createHmac('sha256', serverSecret).update(userId).digest('base64url');
+  if (sig.length !== expected.length) return null;
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (!crypto.timingSafeEqual(a, b)) return null;
+  const stored = loadAuthTokens()[userId];
+  return stored && stored === token ? userId : null;
+}
+
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const userId = verifyToken(token);
+  if (!userId) {
+    res.status(401).json({ error: 'Authentication required: sign up or sign in to continue.' });
+    return;
+  }
+  (req as any).userId = userId;
+  next();
+}
+
+// Simple in-memory sliding-window rate limiter (per client IP)
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(key: string, limit: number, windowMs: number): { allowed: boolean; retryAfterSec?: number } {
+  const now = Date.now();
+  const bucket = rateBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true };
+  }
+  if (bucket.count >= limit) {
+    return { allowed: false, retryAfterSec: Math.ceil((bucket.resetAt - now) / 1000) };
+  }
+  bucket.count += 1;
+  return { allowed: true };
+}
+
+function clientIp(req: express.Request): string {
+  const fwd = req.headers['x-forwarded-for'];
+  if (typeof fwd === 'string' && fwd.length > 0) return fwd.split(',')[0].trim();
+  return req.ip || 'unknown';
+}
+
+// Persisted per-user photo verification ledger (survives restarts; prevents streak farming)
+function loadUserLedger(userId: string): { hashes: string[]; byDate: Record<string, number> } {
+  try {
+    const file = path.join(PHOTOS_DIR, sanitizeUserId(userId), '.ledger.json');
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  } catch { /* fallthrough */ }
+  return { hashes: [], byDate: {} };
+}
+
+function saveUserLedger(userId: string, ledger: { hashes: string[]; byDate: Record<string, number> }): void {
+  try {
+    const dir = path.join(PHOTOS_DIR, sanitizeUserId(userId));
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.ledger.json'), JSON.stringify(ledger));
+  } catch (err) {
+    console.error('Unable to persist photo ledger:', err);
+  }
+}
+
+function todaysKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+const MAX_PHOTOS_PER_USER_PER_DAY = 6;
+
+function sanitizeUserId(userId: string): string {
+  return String(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+// In-memory set of recently verified photo hashes to prevent duplicate/streak farming (deprecated in favor of the persisted ledger)
 const uploadedPhotoHashes = new Set<string>();
 
 // Magic-byte sniffer
@@ -209,6 +321,23 @@ function detectMagicByte(buffer: Buffer): { isValid: boolean; mimeType: string |
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
+// 0. Device registration: get a signed bearer token bound to this profile id
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId || typeof userId !== 'string' || userId.length < 4 || userId.length > 80) {
+      return res.status(400).json({ error: 'A valid profile id (userId) is required to register this device.' });
+    }
+    const sanitized = sanitizeUserId(userId);
+    const token = signToken(sanitized);
+    saveAuthToken(sanitized, token);
+    return res.json({ success: true, token });
+  } catch (err: any) {
+    console.error('Registration error:', err);
+    return res.status(500).json({ error: 'Error registering device: ' + err.message });
+  }
+});
+
 // Host photos statically with security header
 app.use('/data/photos', express.static(PHOTOS_DIR, {
   setHeaders: (res) => {
@@ -219,17 +348,31 @@ app.use('/data/photos', express.static(PHOTOS_DIR, {
 // API Routes
 
 // 1. Photo-Locked Daily Ritual Verification Endpoint
-app.post('/api/streak/verify-photo', (req, res) => {
+app.post('/api/streak/verify-photo', requireAuth, (req, res) => {
   try {
-    const { photoBase64, userId = 'guest_user', mealId, mealTitle } = req.body;
+    const { photoBase64, mealId, mealTitle } = req.body;
+    const userId = (req as any).userId as string;
 
     if (!photoBase64 || typeof photoBase64 !== 'string') {
       return res.status(400).json({ error: 'Missing meal photo binary payload.' });
     }
 
+    // Rate limit: 12 verifications per client per hour
+    const rl = rateLimit(`verify:${clientIp(req)}`, 12, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return res.status(429).json({
+        error: `Photo verification rate limit reached. Try again in ~${rl.retryAfterSec} seconds.`
+      });
+    }
+
     // Strip data URI header if present
     const base64Data = photoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
+
+    // Reject oversized uploads (nothing about a plate photo needs > 12 MB)
+    if (buffer.byteLength > 12 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Image too large. Maximum allowed size is 12 MB.' });
+    }
 
     // Magic-byte sniffer validation
     const { isValid, mimeType, extension } = detectMagicByte(buffer);
@@ -239,18 +382,26 @@ app.post('/api/streak/verify-photo', (req, res) => {
       });
     }
 
-    // Hash check for duplicate prevention (anti streak-farming)
+    // Per-user anti-streak-farming ledger (persisted across restarts)
+    const ledger = loadUserLedger(userId);
+    const today = todaysKey();
+    ledger.byDate[today] = ledger.byDate[today] || 0;
+    if (ledger.byDate[today] >= MAX_PHOTOS_PER_USER_PER_DAY) {
+      return res.status(429).json({
+        error: `Daily photo limit reached (${MAX_PHOTOS_PER_USER_PER_DAY} plates per day). Streak farming is not allowed.`
+      });
+    }
+
+    // Hash check for duplicate prevention
     const hash = crypto.createHash('sha256').update(buffer).digest('hex');
-    if (uploadedPhotoHashes.has(hash)) {
+    if (ledger.hashes.includes(hash)) {
       return res.status(409).json({
         error: 'Duplicate plate detected! Streak activation requires an authentic live snapshot of today’s plate.'
       });
     }
 
-    uploadedPhotoHashes.add(hash);
-
     // Securely write to data/photos/<userId>/
-    const sanitizedUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const sanitizedUserId = sanitizeUserId(userId);
     const userPhotoDir = path.join(PHOTOS_DIR, sanitizedUserId);
     if (!fs.existsSync(userPhotoDir)) {
       fs.mkdirSync(userPhotoDir, { recursive: true });
@@ -259,6 +410,12 @@ app.post('/api/streak/verify-photo', (req, res) => {
     const filename = `${Date.now()}_${hash.slice(0, 10)}.${extension}`;
     const filePath = path.join(userPhotoDir, filename);
     fs.writeFileSync(filePath, buffer);
+
+    // Update ledger + in-memory dedupe set
+    ledger.hashes.push(hash);
+    ledger.byDate[today] += 1;
+    saveUserLedger(userId, ledger);
+    uploadedPhotoHashes.add(hash);
 
     const photoUrl = `/data/photos/${sanitizedUserId}/${filename}`;
 
@@ -301,12 +458,18 @@ app.get('/api/prices/overrides', (_req, res) => {
   }
 });
 
-app.post('/api/prices/submit', (req, res) => {
+app.post('/api/prices/submit', requireAuth, (req, res) => {
   try {
     const { stapleId, stapleName, marketName, country, currency, price, reportedBy } = req.body;
 
     if (!stapleId || !price || Number(price) <= 0) {
       return res.status(400).json({ error: 'Invalid staple price submission parameters.' });
+    }
+
+    // Rate limit: 20 submissions per client per hour
+    const rl = rateLimit(`submit:${clientIp(req)}`, 20, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      return res.status(429).json({ error: 'Price submission rate limit reached. Please wait before submitting again.' });
     }
 
     const raw = fs.readFileSync(PRICE_SAMPLES_FILE, 'utf-8');
@@ -349,7 +512,7 @@ app.post('/api/prices/submit', (req, res) => {
 });
 
 // 3. AI Inflation Swap Engine
-app.post('/api/ai/inflation-swap', async (req, res) => {
+app.post('/api/ai/inflation-swap', requireAuth, async (req, res) => {
   const {
     mealName,
     currentIngredient,
@@ -359,6 +522,11 @@ app.post('/api/ai/inflation-swap', async (req, res) => {
     staplePreference = 'indigenous',
     targetMacros = { protein: 35, carbs: 60, fat: 18 }
   } = req.body;
+
+  const rl = rateLimit(`ai:${clientIp(req)}`, 30, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({ error: 'AI request rate limit reached. Please wait and try again.' });
+  }
 
   // Setup Gemini client if key is present
   const apiKey = process.env.GEMINI_API_KEY;
@@ -458,7 +626,7 @@ Return ONLY the raw JSON without markdown code fences.`;
 });
 
 // 4. Pantry-Aware AI Scanning Endpoint
-app.post('/api/ai/pantry-scan', async (req, res) => {
+app.post('/api/ai/pantry-scan', requireAuth, async (req, res) => {
   const {
     imageBase64,
     mimeType = 'image/jpeg',
@@ -466,6 +634,11 @@ app.post('/api/ai/pantry-scan', async (req, res) => {
     country = 'Nigeria',
     pantryItemsText
   } = req.body;
+
+  const rl = rateLimit(`ai:${clientIp(req)}`, 30, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({ error: 'AI request rate limit reached. Please wait and try again.' });
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -565,9 +738,14 @@ Respond strictly in JSON without markdown code fences:
 });
 
 // 5. AI Meal Visual Representation & Culinary Plating Engine
-app.post('/api/ai/meal-visual', async (req, res) => {
+app.post('/api/ai/meal-visual', requireAuth, async (req, res) => {
   const { mealTitle, ingredients = [], style = 'indigenous', proteinType = 'fish' } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
+
+  const rl = rateLimit(`ai:${clientIp(req)}`, 30, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({ error: 'AI request rate limit reached. Please wait and try again.' });
+  }
 
   if (apiKey) {
     try {
@@ -623,6 +801,11 @@ Respond strictly in JSON without markdown code fences:
   });
 });
 
+// Healthcheck for uptime monitors & deploy platforms
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), ts: Date.now() });
+});
+
 // Setup Vite middleware or static serving
 async function startServer() {
   if (!isProduction) {
@@ -636,15 +819,24 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.resolve(process.cwd(), 'dist');
+    const distPath = process.env.DIST_DIR || path.resolve(process.cwd(), 'dist');
+    const indexFile = path.join(distPath, 'index.html');
+    if (!fs.existsSync(indexFile)) {
+      console.error(
+        `[FATAL] Production assets not found at ${indexFile}. ` +
+        `Run \`npm run build\` before starting, or set DIST_DIR.`
+      );
+      process.exit(1);
+    }
+    // Serve static assets first; then SPA fallback for non-API, non-data routes.
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get(/^\/(?!data\/|api\/).*/, (_req, res) => {
+      res.sendFile(indexFile);
     });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`foodie server listening on http://0.0.0.0:${PORT}`);
+    console.log(`foodie server listening on http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'dev'})`);
   });
 }
 

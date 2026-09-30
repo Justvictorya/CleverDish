@@ -3,6 +3,7 @@ import { UserProfile, PriceSample } from '../types';
 import { Store, Plus, CheckCircle2, TrendingUp, Sparkles, X, ShieldAlert, Award } from 'lucide-react';
 import { COUNTRIES } from '../data/countries';
 import { soundFX } from '../utils/sound';
+import { apiFetch } from '../utils/api';
 
 interface MarketLedgerModalProps {
   profile: UserProfile;
@@ -79,7 +80,7 @@ export const MarketLedgerModal: React.FC<MarketLedgerModalProps> = ({
 
     try {
       setLoading(true);
-      const response = await fetch('/api/prices/submit', {
+      const response = await apiFetch(profile.id, '/api/prices/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
