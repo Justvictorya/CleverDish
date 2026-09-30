@@ -29,12 +29,54 @@ interface SignUpOnboardingFlowProps {
 }
 
 export const CHEF_AVATARS = [
-  { id: 'chef_prepper', emoji: '🧑‍🍳', title: 'Batch Prep Wizard', perk: '+15% Sunday Prep Speed' },
-  { id: 'flavor_alchemist', emoji: '🥘', title: 'Flavor Alchemist', perk: '+10% Indigenous Spices' },
-  { id: 'turbo_shredder', emoji: '⚡', title: 'Turbo Shredder', perk: '+20% Fat Burn Focus' },
-  { id: 'macro_zen', emoji: '🥗', title: 'Macro Zen Master', perk: 'Clean Whole-Food Balance' },
-  { id: 'royal_epicure', emoji: '👑', title: 'Royal Epicure', perk: 'Supreme Market Delicacies' },
-  { id: 'fitness_gladiator', emoji: '🦁', title: 'Fitness Gladiator', perk: '+2.1g/kg Protein Beast' },
+  {
+    id: 'quick_busy',
+    emoji: '⚡',
+    title: 'Quick & Busy',
+    subtitle: '15-Minute Meals',
+    desc: 'I have little time and need fast, simple meals with minimal cleanup.',
+    badge: 'Fast & Easy'
+  },
+  {
+    id: 'batch_prepper',
+    emoji: '🍱',
+    title: 'Sunday Prepper',
+    subtitle: 'Cook Once, Eat 4 Days',
+    desc: 'I like cooking big pots on weekends to store in the freezer for the week.',
+    badge: 'Zero Weekday Stress'
+  },
+  {
+    id: 'budget_saver',
+    emoji: '💰',
+    title: 'Budget Saver',
+    subtitle: 'Smart Market Shopping',
+    desc: 'I want healthy, satisfying meals that stretch my money at local markets.',
+    badge: 'Max Value / Naira'
+  },
+  {
+    id: 'fitness_fuel',
+    emoji: '💪',
+    title: 'Fitness & Protein',
+    subtitle: 'Gym & Muscle Tone',
+    desc: 'I workout or want high-protein meals to build tone and burn body fat.',
+    badge: 'High Protein'
+  },
+  {
+    id: 'traditional_soul',
+    emoji: '🍲',
+    title: 'Home & Soul Food',
+    subtitle: 'Authentic Local Dishes',
+    desc: 'I love authentic local soups, hearty swallows, and rich traditional spices.',
+    badge: 'Rich Flavor'
+  },
+  {
+    id: 'clean_light',
+    emoji: '🥗',
+    title: 'Light & Fresh',
+    subtitle: 'Clean Everyday Eating',
+    desc: 'I want wholesome, low-oil meals that leave me feeling energized and light.',
+    badge: 'Wholesome'
+  },
 ];
 
 export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
@@ -111,6 +153,15 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
     soundFX.playQuestComplete();
     setXpAnimation(`+${amount} XP: ${reason}!`);
     setTimeout(() => setXpAnimation(null), 2500);
+  };
+
+  const handleRandomizeName = () => {
+    soundFX.playTap();
+    const titles = ['Chef', 'Iron Skillet', 'Spice Crafter', 'Macro Wizard', 'Golden Spoon', 'Flame Master'];
+    const names = ['Victoria', 'Amara', 'Tunde', 'Kofi', 'Zainab', 'Nia', 'Chidi', 'Zara', 'Malik', 'Amina'];
+    const chosenTitle = titles[Math.floor(Math.random() * titles.length)];
+    const chosenName = names[Math.floor(Math.random() * names.length)];
+    setName(`${chosenTitle} ${chosenName}`);
   };
 
   const handleNextStep = () => {
@@ -352,121 +403,275 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
 
             {/* ----------------- STAGE 1: PERSONA & COUNTRY ----------------- */}
             {step === 1 && (
-              <div className="space-y-5 animate-in fade-in duration-200">
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* Header with clear gamified progress */}
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-[#7A1C2C] dark:text-rose-400">
-                      Stage 1 · Identity & Archetype
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#7A1C2C] dark:text-rose-400">
+                      <span>🎮 Stage 1: Build Your Chef Character</span>
                     </span>
-                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
-                      +50 Starter XP
+                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-300/40">
+                      ⚡ +50 XP Reward
                     </span>
                   </div>
                   <h3 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-zinc-100">
-                    Create Your Kitchen Persona
+                    Who Is Stepping Into the Kitchen?
                   </h3>
                   <p className="text-xs text-stone-500 dark:text-zinc-400">
-                    Pick your chef archetype and country to unlock local food pricing and calibrated meals.
+                    Set up your chef profile in 3 simple taps to calibrate your 28-day rotational meals.
                   </p>
                 </div>
 
-                {/* 1. Name Input */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-                    Your Full Name or Chef Alias
-                  </label>
+                {/* 1. INTERACTIVE LIVE CHEF ID BADGE (GAMIFIED PREVIEW) */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-[#7A1C2C]/10 via-amber-500/10 to-[#2ECC71]/10 border-2 border-stone-200 dark:border-zinc-700/80 shadow-xs flex items-center justify-between gap-3 relative overflow-hidden">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800 text-[#7A1C2C] dark:text-rose-400 flex items-center justify-center text-3xl shadow-md border-2 border-white dark:border-zinc-700 shrink-0 animate-pulse">
+                      {selectedAvatar}
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 dark:text-zinc-500">
+                        Player Card · Level 1 Rookie Chef
+                      </div>
+                      <div className="text-base sm:text-lg font-black text-stone-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <span>{name.trim() || 'Chef Victoria'}</span>
+                        <span className="text-sm">{countryConfig.flag}</span>
+                      </div>
+                      <div className="text-xs text-[#7A1C2C] dark:text-rose-400 font-bold flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{CHEF_AVATARS.find(a => a.emoji === selectedAvatar)?.title || 'Quick & Busy'}</span>
+                        <span className="text-stone-400 font-normal">·</span>
+                        <span className="text-stone-500 dark:text-zinc-400 font-normal text-[11px]">
+                          {CHEF_AVATARS.find(a => a.emoji === selectedAvatar)?.subtitle || '15-Minute Meals'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hidden sm:flex flex-col items-end text-right shrink-0">
+                    <span className="text-[10px] uppercase font-bold text-stone-400">Active Market</span>
+                    <span className="font-mono font-black text-stone-800 dark:text-zinc-200 text-xs">
+                      {countryConfig.name} ({countryConfig.currency})
+                    </span>
+                    <span className="text-[10px] text-emerald-600 font-bold mt-0.5">🟢 Verified Hub</span>
+                  </div>
+                </div>
+
+                {/* 2. STEP 1A: CHEF NAME OR FUN GENERATOR */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-stone-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-[#7A1C2C] text-white flex items-center justify-center text-[10px] font-bold">1</span>
+                      <span>Your Chef Alias or Name</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRandomizeName}
+                      className="text-[11px] font-bold text-[#7A1C2C] dark:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer bg-stone-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl border border-stone-200 dark:border-zinc-700"
+                      title="Generate a playful chef handle"
+                    >
+                      <span>🎲 Roll Fun Chef Title</span>
+                    </button>
+                  </div>
                   <div className="relative">
                     <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Victoria John"
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-semibold text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#7A1C2C]/20"
+                      placeholder="e.g. Victoria John or Chef Vic"
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-bold text-stone-900 dark:text-zinc-100 focus:outline-none focus:border-[#7A1C2C] transition-colors"
                       required
                     />
                   </div>
                 </div>
 
-                {/* 2. Choose Chef Avatar Archetype */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
-                    Select Your Chef Avatar Archetype
-                  </label>
+                {/* 3. STEP 1B: CHOOSE YOUR COOKING STYLE */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-stone-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-[#7A1C2C] text-white flex items-center justify-center text-[10px] font-bold">2</span>
+                      <span>What's Your Cooking Style?</span>
+                    </label>
+                    <span className="text-[11px] text-stone-500 dark:text-zinc-400 font-semibold">
+                      Pick the one that fits your real routine
+                    </span>
+                  </div>
+
+                  {/* 1-Tap Quick Match Chips if they are not sure */}
+                  <div className="p-2.5 bg-stone-100 dark:bg-zinc-850 rounded-2xl border border-stone-200/80 dark:border-zinc-800 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="text-[11px] font-bold text-stone-400 dark:text-zinc-400 pl-1">Quick match:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFX.playTap();
+                        setSelectedAvatar('⚡');
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                        selectedAvatar === '⚡'
+                          ? 'bg-[#7A1C2C] text-white shadow-xs'
+                          : 'bg-white dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700'
+                      }`}
+                    >
+                      ⚡ Super Busy / Fast Meals
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFX.playTap();
+                        setSelectedAvatar('🍱');
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                        selectedAvatar === '🍱'
+                          ? 'bg-[#7A1C2C] text-white shadow-xs'
+                          : 'bg-white dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700'
+                      }`}
+                    >
+                      🍱 Batch Cook on Sunday
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFX.playTap();
+                        setSelectedAvatar('💰');
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                        selectedAvatar === '💰'
+                          ? 'bg-[#7A1C2C] text-white shadow-xs'
+                          : 'bg-white dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700'
+                      }`}
+                    >
+                      💰 Save Money at Market
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundFX.playTap();
+                        setSelectedAvatar('💪');
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                        selectedAvatar === '💪'
+                          ? 'bg-[#7A1C2C] text-white shadow-xs'
+                          : 'bg-white dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700'
+                      }`}
+                    >
+                      💪 Gym & High Protein
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {CHEF_AVATARS.map((av) => {
+                      const isSelected = selectedAvatar === av.emoji;
+                      return (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => {
+                            soundFX.playTap();
+                            setSelectedAvatar(av.emoji);
+                          }}
+                          className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+                            isSelected
+                              ? 'border-[#7A1C2C] bg-[#7A1C2C]/5 dark:bg-rose-950/30 shadow-md ring-2 ring-[#7A1C2C]/20 scale-[1.01]'
+                              : 'border-stone-200 dark:border-zinc-700/80 hover:border-stone-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-800'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-2xl">{av.emoji}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                  isSelected
+                                    ? 'bg-[#7A1C2C] text-white'
+                                    : 'bg-stone-100 dark:bg-zinc-700 text-stone-600 dark:text-zinc-300'
+                                }`}>
+                                  {av.badge}
+                                </span>
+                                {isSelected && (
+                                  <CheckCircle2 className="w-4 h-4 text-[#7A1C2C] dark:text-rose-400 shrink-0" />
+                                )}
+                              </div>
+                            </div>
+                            <div className={`text-xs font-black ${
+                              isSelected ? 'text-[#7A1C2C] dark:text-rose-400' : 'text-stone-900 dark:text-zinc-100'
+                            }`}>
+                              {av.title}
+                            </div>
+                            <div className="text-[11px] font-bold text-stone-500 dark:text-zinc-400 mt-0.5">
+                              {av.subtitle}
+                            </div>
+                            <p className="text-[11px] text-stone-600 dark:text-zinc-400 mt-1 leading-snug">
+                              {av.desc}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. STEP 1C: CHOOSE YOUR COOKING REGION */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-stone-800 dark:text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-[#7A1C2C] text-white flex items-center justify-center text-[10px] font-bold">3</span>
+                      <span>Select Your Kitchen Country</span>
+                    </label>
+                    <span className="text-[11px] text-stone-400 dark:text-zinc-500 font-semibold">
+                      Anchors currency & market prices
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {CHEF_AVATARS.map((av) => (
-                      <button
-                        key={av.id}
-                        type="button"
-                        onClick={() => {
-                          soundFX.playTap();
-                          setSelectedAvatar(av.emoji);
-                        }}
-                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                          selectedAvatar === av.emoji
-                            ? 'border-[#7A1C2C] bg-[#7A1C2C]/10 dark:bg-rose-950/40 shadow-sm ring-2 ring-[#7A1C2C]/30'
-                            : 'border-stone-200 dark:border-zinc-700 hover:border-stone-300 bg-white dark:bg-zinc-800 text-stone-700 dark:text-zinc-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-2xl">{av.emoji}</span>
-                          {selectedAvatar === av.emoji && (
-                            <CheckCircle2 className="w-4 h-4 text-[#7A1C2C] dark:text-rose-400" />
+                    {Object.values(COUNTRIES).map((c) => {
+                      const isSelected = country === c.code;
+                      return (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => {
+                            soundFX.playTap();
+                            setCountry(c.code);
+                            if (c.code === 'NG') setBudgetAmount(90000);
+                            else if (c.code === 'US') setBudgetAmount(450);
+                            else if (c.code === 'UK') setBudgetAmount(350);
+                            else if (c.code === 'GH') setBudgetAmount(1400);
+                            else if (c.code === 'KE') setBudgetAmount(12000);
+                            else if (c.code === 'CA') setBudgetAmount(550);
+                          }}
+                          className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                            isSelected
+                              ? 'border-[#7A1C2C] bg-[#7A1C2C]/5 dark:bg-rose-950/30 shadow-md ring-2 ring-[#7A1C2C]/20'
+                              : 'border-stone-200 dark:border-zinc-700/80 hover:border-stone-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-800'
+                          }`}
+                        >
+                          <span className="text-2xl shrink-0">{c.flag}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-extrabold text-stone-900 dark:text-zinc-100 truncate">
+                              {c.name}
+                            </div>
+                            <div className="text-[10px] font-mono text-stone-500 dark:text-zinc-400">
+                              {c.currency} ({c.currencySymbol})
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <CheckCircle2 className="w-4 h-4 text-[#7A1C2C] dark:text-rose-400 shrink-0" />
                           )}
-                        </div>
-                        <div className="mt-2">
-                          <div className="font-extrabold text-xs text-stone-900 dark:text-zinc-100">
-                            {av.title}
-                          </div>
-                          <div className="text-[10px] text-stone-500 dark:text-zinc-400 mt-0.5">
-                            {av.perk}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* 3. Country Anchor */}
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
-                    Active Kitchen Territory
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {Object.values(COUNTRIES).map((c) => (
-                      <button
-                        key={c.code}
-                        type="button"
-                        onClick={() => {
-                          soundFX.playTap();
-                          setCountry(c.code);
-                          if (c.code === 'NG') setBudgetAmount(90000);
-                          else if (c.code === 'US') setBudgetAmount(450);
-                          else if (c.code === 'UK') setBudgetAmount(350);
-                          else if (c.code === 'GH') setBudgetAmount(1400);
-                          else if (c.code === 'KE') setBudgetAmount(12000);
-                          else if (c.code === 'CA') setBudgetAmount(550);
-                        }}
-                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                          country === c.code
-                            ? 'border-[#7A1C2C] bg-[#7A1C2C]/5 dark:bg-rose-950/30 shadow-sm font-bold text-[#7A1C2C] dark:text-rose-400'
-                            : 'border-stone-200 dark:border-zinc-700 hover:border-stone-300 bg-white dark:bg-zinc-800 text-stone-700 dark:text-zinc-300'
-                        }`}
-                      >
-                        <div className="text-2xl mb-1">{c.flag}</div>
-                        <div className="text-xs font-bold text-stone-900 dark:text-zinc-100">{c.name}</div>
-                        <div className="text-[11px] text-stone-500 dark:text-zinc-400 font-mono mt-0.5">
-                          {c.currency} ({c.currencySymbol})
-                        </div>
-                      </button>
-                    ))}
+                {/* Sourcing market hint note */}
+                <div className="p-3 bg-stone-50 dark:bg-zinc-850 rounded-2xl border border-stone-200 dark:border-zinc-800 text-xs text-stone-600 dark:text-zinc-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-[#7A1C2C] dark:text-rose-400 shrink-0" />
+                    <span>
+                      Live Prices Sourced From: <strong>{countryConfig.defaultMarkets.slice(0, 3).join(', ')}</strong>
+                    </span>
                   </div>
-                </div>
-
-                <div className="p-3 bg-stone-50 dark:bg-zinc-850 rounded-2xl border border-stone-200 dark:border-zinc-800 text-xs text-stone-600 dark:text-zinc-300 flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-[#7A1C2C] dark:text-rose-400 shrink-0" />
-                  <span>
-                    Linked to real local markets: <strong>{countryConfig.defaultMarkets.join(', ')}</strong>
+                  <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    Ready
                   </span>
                 </div>
               </div>
