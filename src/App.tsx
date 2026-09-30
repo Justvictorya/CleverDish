@@ -58,7 +58,7 @@ import { soundFX } from './utils/sound';
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'usr_victor',
-  name: 'Victoria',
+  name: '',
   country: 'NG',
   age: 26,
   gender: 'female',
@@ -217,9 +217,9 @@ export default function App() {
   const [challenges, setChallenges] = useState<CommunityChallenge[]>(() => {
     try {
       const saved = localStorage.getItem(`cleverdish_challenges_${profile.id}`);
-      return saved ? JSON.parse(saved) : getDefaultChallenges(profile.name || 'Victoria', profile.country);
+      return saved ? JSON.parse(saved) : getDefaultChallenges(profile.name, profile.country);
     } catch {
-      return getDefaultChallenges(profile.name || 'Victoria', profile.country);
+      return getDefaultChallenges(profile.name, profile.country);
     }
   });
 

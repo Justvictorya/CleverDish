@@ -57,7 +57,7 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
   const [challenges, setChallenges] = useState<CommunityChallenge[]>(() => {
     return initialChallenges && initialChallenges.length > 0
       ? initialChallenges
-      : getDefaultChallenges(profile.name || 'Victoria', profile.country);
+      : getDefaultChallenges(profile.name, profile.country);
   });
 
   // Collapsible accordion states to keep the UI uncrowded
@@ -144,7 +144,7 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <h4 className="font-extrabold text-sm text-stone-900 dark:text-zinc-100 truncate">
-                      {profile.name || 'Chef Victoria'}
+                      {profile.name || 'Chef'}
                     </h4>
                     <span className="text-[10px] font-mono font-bold uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 px-1.5 py-0.2 rounded border border-amber-300/40">
                       Lv.{currentTier.level}

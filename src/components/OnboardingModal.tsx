@@ -33,7 +33,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   // Form State
   const [country, setCountry] = useState<CountryCode>(initialProfile?.country || 'NG');
-  const [name, setName] = useState(initialProfile?.name || 'Victoria');
+  const [name, setName] = useState(initialProfile?.name || '');
   const [age, setAge] = useState(initialProfile?.age || 26);
   const [gender, setGender] = useState<'male' | 'female'>(initialProfile?.gender || 'female');
   const [weightKg, setWeightKg] = useState(initialProfile?.weightKg || 65);

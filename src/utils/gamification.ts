@@ -223,7 +223,7 @@ export const getDefaultDailyQuests = (): DailyQuest[] => [
   }
 ];
 
-export const getDefaultChallenges = (userName = 'Victoria', userCountry: CountryCode = 'NG'): CommunityChallenge[] => [
+export const getDefaultChallenges = (userName = '', userCountry: CountryCode = 'NG'): CommunityChallenge[] => [
   {
     id: 'challenge_meatless',
     title: '7-Day Meatless Streak',
@@ -248,7 +248,7 @@ export const getDefaultChallenges = (userName = 'Victoria', userCountry: Country
       { rank: 2, userName: 'Kwesi M.', avatar: '👨🏿‍🍳', country: 'GH', progressValue: 7, progressLabel: '7/7 days (Done)', scoreXp: 1320 },
       { rank: 3, userName: 'Sarah K.', avatar: '👩🏼‍🍳', country: 'UK', progressValue: 6, progressLabel: '6/7 days', scoreXp: 1180 },
       { rank: 4, userName: 'Marcus B.', avatar: '👨🏽‍🍳', country: 'CA', progressValue: 5, progressLabel: '5/7 days', scoreXp: 980 },
-      { rank: 14, userName: `${userName} (You)`, avatar: '🍲', country: userCountry, progressValue: 4, progressLabel: '4/7 days (43%)', scoreXp: 820, isCurrentUser: true },
+      { rank: 14, userName: userName ? `${userName} (You)` : 'You', avatar: '🍲', country: userCountry, progressValue: 4, progressLabel: '4/7 days (43%)', scoreXp: 820, isCurrentUser: true },
       { rank: 25, userName: 'David A.', avatar: '👨🏾‍🍳', country: 'US', progressValue: 3, progressLabel: '3/7 days', scoreXp: 640 },
       { rank: 31, userName: 'Fatimah B.', avatar: '👩🏽‍🍳', country: 'KE', progressValue: 3, progressLabel: '3/7 days', scoreXp: 590 }
     ]
@@ -276,7 +276,7 @@ export const getDefaultChallenges = (userName = 'Victoria', userCountry: Country
       { rank: 1, userName: 'Toluwanimi A.', avatar: '👨🏾‍💼', country: 'NG', progressValue: 24, progressLabel: '24/30 days', scoreXp: 2850 },
       { rank: 2, userName: 'Elena R.', avatar: '👩🏻‍💻', country: 'UK', progressValue: 22, progressLabel: '22/30 days', scoreXp: 2600 },
       { rank: 3, userName: 'Chidi E.', avatar: '👨🏿‍💻', country: 'NG', progressValue: 19, progressLabel: '19/30 days', scoreXp: 2340 },
-      { rank: 9, userName: `${userName} (You)`, avatar: '🍲', country: userCountry, progressValue: 12, progressLabel: '12/30 days (40%)', scoreXp: 1850, isCurrentUser: true },
+      { rank: 9, userName: userName ? `${userName} (You)` : 'You', avatar: '🍲', country: userCountry, progressValue: 12, progressLabel: '12/30 days (40%)', scoreXp: 1850, isCurrentUser: true },
       { rank: 18, userName: 'Chloe D.', avatar: '👩🏼‍🌾', country: 'CA', progressValue: 10, progressLabel: '10/30 days', scoreXp: 1420 },
       { rank: 34, userName: 'Nia K.', avatar: '👩🏾‍🔬', country: 'KE', progressValue: 8, progressLabel: '8/30 days', scoreXp: 1100 }
     ]
@@ -304,7 +304,7 @@ export const getDefaultChallenges = (userName = 'Victoria', userCountry: Country
       { rank: 1, userName: 'Ifeanyi N.', avatar: '👨🏾‍🍳', country: 'NG', progressValue: 3, progressLabel: '3/3 batches (Done)', scoreXp: 1100 },
       { rank: 2, userName: 'Amina S.', avatar: '👩🏽‍🍳', country: 'KE', progressValue: 3, progressLabel: '3/3 batches (Done)', scoreXp: 1050 },
       { rank: 3, userName: 'Jordan T.', avatar: '👨🏼‍🍳', country: 'US', progressValue: 2, progressLabel: '2/3 batches', scoreXp: 750 },
-      { rank: 41, userName: `${userName} (You)`, avatar: '🍲', country: userCountry, progressValue: 1, progressLabel: '1/3 batches', scoreXp: 380, isCurrentUser: true }
+      { rank: 41, userName: userName ? `${userName} (You)` : 'You', avatar: '🍲', country: userCountry, progressValue: 1, progressLabel: '1/3 batches', scoreXp: 380, isCurrentUser: true }
     ]
   },
   {
@@ -330,7 +330,7 @@ export const getDefaultChallenges = (userName = 'Victoria', userCountry: Country
       { rank: 1, userName: 'Bisi F.', avatar: '👩🏾‍🍳', country: 'NG', progressValue: 14, progressLabel: '14/14 days (Done)', scoreXp: 2100 },
       { rank: 2, userName: 'Tariq M.', avatar: '👨🏽‍🍳', country: 'UK', progressValue: 13, progressLabel: '13/14 days', scoreXp: 1950 },
       { rank: 3, userName: 'Maya L.', avatar: '👩🏼‍⚕️', country: 'CA', progressValue: 12, progressLabel: '12/14 days', scoreXp: 1800 },
-      { rank: 22, userName: `${userName} (You)`, avatar: '🍲', country: userCountry, progressValue: 6, progressLabel: '6/14 days', scoreXp: 920, isCurrentUser: true }
+      { rank: 22, userName: userName ? `${userName} (You)` : 'You', avatar: '🍲', country: userCountry, progressValue: 6, progressLabel: '6/14 days', scoreXp: 920, isCurrentUser: true }
     ]
   }
 ];

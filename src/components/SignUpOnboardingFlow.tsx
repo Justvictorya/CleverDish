@@ -158,7 +158,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
   const handleRandomizeName = () => {
     soundFX.playTap();
     const titles = ['Chef', 'Iron Skillet', 'Spice Crafter', 'Macro Wizard', 'Golden Spoon', 'Flame Master'];
-    const names = ['Victoria', 'Amara', 'Tunde', 'Kofi', 'Zainab', 'Nia', 'Chidi', 'Zara', 'Malik', 'Amina'];
+    const names = ['Amara', 'Tunde', 'Kofi', 'Zainab', 'Nia', 'Chidi', 'Zara', 'Malik', 'Amina', 'Emeka'];
     const chosenTitle = titles[Math.floor(Math.random() * titles.length)];
     const chosenName = names[Math.floor(Math.random() * names.length)];
     setName(`${chosenTitle} ${chosenName}`);
@@ -353,34 +353,10 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                     type="text"
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="e.g. Victoria John"
+                    placeholder="Enter your name or email"
                     className="w-full pl-10 pr-4 py-3 rounded-2xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-semibold text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#7A1C2C]/20"
                     required
                   />
-                </div>
-              </div>
-
-              {/* Quick Pick Stored Profiles / Demo Chefs */}
-              <div className="p-3 bg-stone-50 dark:bg-zinc-850 rounded-2xl border border-stone-200 dark:border-zinc-800 space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-zinc-400">
-                  Quick Access Profiles:
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { name: 'Victoria John', avatar: '🧑‍🍳', role: 'Macro Strategist' },
-                    { name: 'Chef Amara', avatar: '🥘', role: 'Bodija Market Hunter' },
-                    { name: 'Tunde Ade', avatar: '⚡', role: 'Turbo Shredder' }
-                  ].map((p) => (
-                    <button
-                      key={p.name}
-                      type="button"
-                      onClick={() => setLoginIdentifier(p.name)}
-                      className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#7A1C2C] text-xs font-semibold text-stone-800 dark:text-zinc-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <span>{p.avatar}</span>
-                      <span>{p.name}</span>
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -433,7 +409,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                         Player Card · Level 1 Rookie Chef
                       </div>
                       <div className="text-base sm:text-lg font-black text-stone-900 dark:text-zinc-100 flex items-center gap-1.5">
-                        <span>{name.trim() || 'Chef Victoria'}</span>
+                        <span>{name.trim() || 'Chef'}</span>
                         <span className="text-sm">{countryConfig.flag}</span>
                       </div>
                       <div className="text-xs text-[#7A1C2C] dark:text-rose-400 font-bold flex items-center gap-1">
@@ -478,7 +454,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Victoria John or Chef Vic"
+                      placeholder="e.g. Amara Okonkwo"
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-bold text-stone-900 dark:text-zinc-100 focus:outline-none focus:border-[#7A1C2C] transition-colors"
                       required
                     />
