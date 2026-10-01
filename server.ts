@@ -337,6 +337,9 @@ function describeAiError(err: unknown): string {
 const AI_MODEL_CHAIN = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
 const TRANSIENT_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 
+/** Wall-clock ceiling for the whole model chain before the rules engine answers. */
+const AI_BUDGET_MS = Number(process.env.AI_BUDGET_MS) || 12000;
+
 function isTransientAiError(err: unknown): boolean {
   const e = err as { status?: number; code?: number; message?: string };
   const status = Number(e?.status || e?.code || 0);
@@ -352,13 +355,34 @@ async function generateWithFallback(
   request: Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'>
 ): Promise<{ response: Awaited<ReturnType<GoogleGenAI['models']['generateContent']>>; model: string }> {
   let lastError: unknown;
+  // The rules engine is instant and country-correct, so never let the model
+  // chain hold a tap open longer than this.
+  const deadline = Date.now() + AI_BUDGET_MS;
 
   for (const model of AI_MODEL_CHAIN) {
     for (let attempt = 0; attempt < 2; attempt++) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        console.warn('[AI] time budget exhausted, using rules engine:', describeAiError(lastError));
+        throw lastError || new Error('AI time budget exhausted');
+      }
+
       try {
-        const response = await ai.models.generateContent({ ...request, model } as never);
+        const pending = ai.models.generateContent({
+          ...request,
+          model,
+          config: { ...(request as { config?: object }).config, thinkingConfig: { thinkingLevel: 'low' } }
+        } as never);
+        // Swallow a late rejection so a timed-out attempt cannot crash the process.
+        pending.catch(() => {});
+        const response = await Promise.race([
+          pending,
+          sleep(remaining).then(() => {
+            throw Object.assign(new Error('AI attempt timed out'), { status: 503 });
+          })
+        ]);
         if (attempt > 0 || model !== AI_MODEL_CHAIN[0]) {
-          console.warn(`[AI] recovered on ${model} after transient failure on ${AI_MODEL_CHAIN[0]}`);
+          console.warn(`[AI] served by ${model} after transient failure on ${AI_MODEL_CHAIN[0]}`);
         }
         return { response, model };
       } catch (err) {
@@ -367,6 +391,7 @@ async function generateWithFallback(
         // malformed prompt), so fail fast instead of burning the whole chain.
         if (!isTransientAiError(err)) throw err;
         if (attempt === 1) break;
+        if (Date.now() >= deadline) break;
         console.warn(`[AI] transient failure on ${model}, retrying once:`, describeAiError(err));
         await sleep(400);
       }
