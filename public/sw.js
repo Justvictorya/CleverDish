@@ -3,6 +3,11 @@ const SHELL = '/';
 const STATIC_CACHE = 'cleverdish-shell-v1';
 const ASSET_CACHE = 'cleverdish-assets-v1';
 
+// Bumped whenever the caching strategy changes so old caches are dropped.
+const CACHE_VERSION = 'v2';
+const CURRENT_ASSET_CACHE = `${ASSET_CACHE}-${CACHE_VERSION}`;
+const MAX_CACHED_ASSETS = 60;
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll([SHELL])).then(() => self.skipWaiting())
@@ -16,13 +21,25 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k !== STATIC_CACHE && k !== ASSET_CACHE)
+            .filter((k) => k !== STATIC_CACHE && k !== CURRENT_ASSET_CACHE)
             .map((k) => caches.delete(k))
         )
       )
       .then(() => self.clients.claim())
   );
 });
+
+// Keep the asset cache from growing without bound across deploys.
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) return;
+  // Oldest first — Cache API preserves insertion order.
+  const excess = keys.length - maxEntries;
+  for (const key of keys.slice(0, excess)) {
+    await cache.delete(key);
+  }
+}
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
@@ -53,12 +70,63 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           if (res && res.status === 200 && res.type === 'basic') {
             const copy = res.clone();
-            caches.open(ASSET_CACHE).then((cache) => cache.put(event.request, copy));
+            caches.open(CURRENT_ASSET_CACHE).then(async (cache) => {
+              await cache.put(event.request, copy);
+              await trimCache(CURRENT_ASSET_CACHE, MAX_CACHED_ASSETS);
+            });
           }
           return res;
         })
         .catch(() => cached);
       return cached || network;
+    })
+  );
+});
+
+// ---------------- Meal-time reminders ----------------
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'CleverDish';
+  const options = {
+    body: payload.body || 'Time to eat.',
+    tag: payload.tag || 'cleverdish-reminder',
+    icon: '/manifest-icon-192.png',
+    badge: '/manifest-icon-192.png',
+    renotify: false,
+    requireInteraction: false,
+    vibrate: [120, 60, 120],
+    data: { url: payload.url || '/?tab=today' },
+    actions: [
+      { action: 'open', title: "View today's plate" },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  if (event.action === 'dismiss') return;
+
+  const target = new URL(event.notification.data?.url || '/?tab=today', self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Focus an existing tab so the user doesn't get a duplicate window.
+      for (const client of clientList) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          client.navigate(target);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
     })
   );
 });

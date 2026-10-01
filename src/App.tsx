@@ -15,6 +15,8 @@ import { MarketLedgerModal } from './components/MarketLedgerModal';
 import { PantryScannerModal } from './components/PantryScannerModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { TravelModeModal } from './components/TravelModeModal';
+import { ReminderSettingsModal } from './components/ReminderSettingsModal';
+import { getReminderStatus, syncReminderPreferences } from './utils/notifications';
 import { CookbookModal } from './components/CookbookModal';
 import { SendFoodHomeModal } from './components/SendFoodHomeModal';
 import { ProSubscriptionModal } from './components/ProSubscriptionModal';
@@ -172,6 +174,8 @@ export default function App() {
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
   const [isPantryScannerOpen, setIsPantryScannerOpen] = useState(false);
   const [isTravelModeOpen, setIsTravelModeOpen] = useState(false);
+  const [isReminderSettingsOpen, setIsReminderSettingsOpen] = useState(false);
+  const [remindersActive, setRemindersActive] = useState(false);
   const [isCookbookOpen, setIsCookbookOpen] = useState(false);
   const [isSendFoodHomeOpen, setIsSendFoodHomeOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
@@ -336,6 +340,17 @@ export default function App() {
     localStorage.setItem(storageKey('profile'), JSON.stringify(profile));
   }, [profile]);
 
+  // Reflect live reminder state in the Navbar bell.
+  useEffect(() => {
+    let cancelled = false;
+    getReminderStatus(profile.id).then((status) => {
+      if (!cancelled) setRemindersActive(Boolean(status?.active));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profile.id]);
+
   // Sync meals to localStorage
   useEffect(() => {
     localStorage.setItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}`), JSON.stringify(meals));
@@ -360,6 +375,13 @@ export default function App() {
     setMeals(refreshedMeals);
     setSelectedDay(1);
     setActiveTab('today');
+
+    // Reminders name today's dish, so they must follow the new plan.
+    syncReminderPreferences(updated.id, {
+      country: updated.country,
+      staplePreference: updated.staplePreference,
+      planStartDate: updated.planStartDate
+    }).catch(() => { /* not subscribed yet, or offline — nothing to do */ });
   };
 
   const handleChangeGoal = (newGoal: FitnessGoal) => {
@@ -384,6 +406,10 @@ export default function App() {
     }));
     const refreshedMeals = generate28DayPlan(newCountry, profile.staplePreference);
     setMeals(refreshedMeals);
+
+    // Reminders name today's dish, so they must follow the new country.
+    syncReminderPreferences(profile.id, { country: newCountry, planStartDate: profile.planStartDate })
+      .catch(() => { /* not subscribed yet, or offline — nothing to do */ });
   };
 
   const handlePhotoVerificationSuccess = (photoUrl: string) => {
@@ -561,6 +587,8 @@ export default function App() {
         onSelectTab={setActiveTab}
         onOpenOnboarding={() => setProfile(p => ({ ...p, hasOnboarded: false }))}
         onOpenTravelMode={() => setIsTravelModeOpen(true)}
+        onOpenReminders={() => setIsReminderSettingsOpen(true)}
+        remindersActive={remindersActive}
         onOpenCookbook={() => setIsCookbookOpen(true)}
         onOpenSendFoodHome={() => setIsSendFoodHomeOpen(true)}
         onOpenPro={() => setIsProModalOpen(true)}
@@ -1103,6 +1131,15 @@ export default function App() {
         isOpen={isTravelModeOpen}
         onClose={() => setIsTravelModeOpen(false)}
         onUpdateCountry={handleUpdateCountry}
+      />
+
+      <ReminderSettingsModal
+        profile={profile}
+        isOpen={isReminderSettingsOpen}
+        onClose={() => {
+          setIsReminderSettingsOpen(false);
+          void getReminderStatus(profile.id).then((s) => setRemindersActive(Boolean(s?.active)));
+        }}
       />
 
       <CookbookModal

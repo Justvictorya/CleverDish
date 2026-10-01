@@ -18,7 +18,8 @@ import {
   ShoppingCart,
   Snowflake,
   Trophy,
-  Sparkles
+  Sparkles,
+  Bell
 } from 'lucide-react';
 import { getChefTier } from '../utils/gamification';
 
@@ -38,6 +39,8 @@ interface NavbarProps {
   onOpenMarketRun?: () => void;
   onOpenFreezerVault?: () => void;
   onOpenAccomplishments?: () => void;
+  onOpenReminders?: () => void;
+  remindersActive?: boolean;
   freezerCount?: number;
 }
 
@@ -57,6 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenMarketRun,
   onOpenFreezerVault,
   onOpenAccomplishments,
+  onOpenReminders,
+  remindersActive = false,
   freezerCount = 0
 }) => {
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
@@ -169,6 +174,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-sm">{profile.avatar || '🧑‍🍳'}</span>
             <span className="text-white hidden lg:inline max-w-[90px] truncate">{profile.name}</span>
           </button>
+
+          {/* Meal-time reminders */}
+          {onOpenReminders && (
+            <button
+              onClick={onOpenReminders}
+              className={`relative w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                remindersActive ? 'bg-white/25 text-white' : 'bg-white/10 hover:bg-white/20 text-white/90'
+              } hover:text-white`}
+              title={remindersActive ? 'Meal reminders are on' : 'Set meal reminders'}
+              aria-label="Meal reminders"
+            >
+              <Bell className="w-4 h-4" />
+              {remindersActive && (
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#2ECC71] border-2 border-[#7A1C2C]" />
+              )}
+            </button>
+          )}
 
           {/* Settings / Biometrics */}
           <button

@@ -5,6 +5,9 @@ import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { ReminderService, DEFAULT_REMINDER_TIMES } from './src/server/pushReminders';
+import { COUNTRIES } from './src/data/countries';
+import type { CountryCode, StaplePreference } from './src/types';
 
 dotenv.config();
 
@@ -980,13 +983,102 @@ Respond strictly in JSON without markdown code fences:
 });
 
 // Healthcheck for uptime monitors & deploy platforms
+// ---------------- Meal-time push reminders ----------------
+const reminders = new ReminderService(DATA_DIR);
+const pushInfo = reminders.init();
+if (pushInfo.ready) {
+  reminders.start();
+  console.log(`[push] meal reminders enabled (VAPID from ${pushInfo.source}).`);
+}
+
+/** Public key is safe to hand to browsers; the private key never leaves the server. */
+app.get('/api/notifications/config', (_req, res) => {
+  res.json({
+    enabled: reminders.isReady,
+    vapidPublicKey: reminders.isReady ? pushInfo.publicKey : null,
+    defaults: DEFAULT_REMINDER_TIMES
+  });
+});
+
+app.get('/api/notifications/status', requireAuth, (req, res) => {
+  const record = reminders.get((req as any).userId);
+  res.json({
+    enabled: reminders.isReady,
+    subscribed: Boolean(record),
+    active: Boolean(record?.enabled),
+    timezone: record?.timezone || null,
+    times: record?.times || DEFAULT_REMINDER_TIMES
+  });
+});
+
+app.post('/api/notifications/subscribe', requireAuth, (req, res) => {
+  if (!reminders.isReady) {
+    return res.status(503).json({ error: 'Reminders are not configured on this server.' });
+  }
+
+  const rl = rateLimit(`push:${clientIp(req)}`, 20, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return res.status(429).json({ error: 'Too many reminder updates. Please wait and try again.' });
+  }
+
+  const { subscription, timezone, country, staplePreference, planStartDate, times } = req.body || {};
+
+  if (!subscription || typeof subscription.endpoint !== 'string' || !subscription.keys?.auth) {
+    return res.status(400).json({ error: 'A valid push subscription is required.' });
+  }
+  if (typeof timezone !== 'string' || !reminders.isValidTimezone(timezone)) {
+    return res.status(400).json({ error: 'A valid IANA timezone is required, e.g. Africa/Lagos.' });
+  }
+  if (!COUNTRIES[country as CountryCode]) {
+    return res.status(400).json({ error: 'A valid country code is required.' });
+  }
+
+  const preference: StaplePreference = ['indigenous', 'continental', 'balanced'].includes(staplePreference)
+    ? staplePreference
+    : 'indigenous';
+
+  const record = reminders.subscribe((req as any).userId, {
+    subscription,
+    timezone,
+    country: country as CountryCode,
+    staplePreference: preference,
+    planStartDate,
+    times
+  });
+
+  console.log(`[push] ${(req as any).userId} subscribed (${record.timezone}, ${record.times.morning}/${record.times.afternoon}/${record.times.evening}). Subscribers: ${reminders.count()}.`);
+
+  res.json({
+    ok: true,
+    timezone: record.timezone,
+    times: record.times
+  });
+});
+
+app.post('/api/notifications/unsubscribe', requireAuth, (req, res) => {
+  const removed = reminders.unsubscribe((req as any).userId);
+  console.log(`[push] ${(req as any).userId} ${removed ? 'unsubscribed' : 'was not subscribed'}. Subscribers: ${reminders.count()}.`);
+  res.json({ ok: true, removed });
+});
+
+/** Keeps an existing browser subscription in sync with in-app changes. */
+app.patch('/api/notifications/preferences', requireAuth, (req, res) => {
+  const record = reminders.update((req as any).userId, req.body || {});
+  if (!record) {
+    return res.status(404).json({ error: 'No push subscription found for this device.' });
+  }
+  res.json({ ok: true, timezone: record.timezone, times: record.times, active: record.enabled });
+});
+
 app.get('/api/health', (_req, res) => {
   // Reports only whether a key is configured, never the value itself.
   res.json({
     status: 'ok',
     uptime: process.uptime(),
     ts: Date.now(),
-    aiConfigured: Boolean(process.env.GEMINI_API_KEY)
+    aiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    remindersEnabled: reminders.isReady,
+    reminderSubscribers: reminders.count()
   });
 });
 

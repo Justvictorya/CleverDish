@@ -13,14 +13,21 @@ export function getTodaysCycleDay(planStartDate?: string): number {
     return ((dayOfYear % 28) + 1);
   }
 
-  const start = new Date(planStartDate);
   const now = new Date();
 
-  // Normalize to local calendar midnight
-  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
-  const currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  // Compare calendar days, not timestamps. Subtracting two local-midnight
+  // Date objects loses a day whenever a DST shift falls between them (e.g. a
+  // plan started in GMT and now viewed during BST), which silently shifted
+  // the rotation by one. Date.UTC on the calendar parts is DST-proof.
+  const [startYear, startMonth, startDay] = planStartDate.split('-').map(Number);
+  const validStart =
+    Number.isFinite(startYear) && Number.isFinite(startMonth) && Number.isFinite(startDay);
 
-  const diffDays = Math.floor((currentDay - startDay) / (1000 * 60 * 60 * 24));
+  if (!validStart) return 1;
+
+  const startDayUtc = Date.UTC(startYear, startMonth - 1, startDay);
+  const currentDayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.floor((currentDayUtc - startDayUtc) / (1000 * 60 * 60 * 24));
   if (diffDays < 0) return 1;
 
   // 1-indexed 28-day rotational loop
