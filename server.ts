@@ -329,6 +329,53 @@ function describeAiError(err: unknown): string {
   return `${e?.name || 'Error'} status=${status} ${message}`;
 }
 
+/**
+ * Gemini occasionally answers 503 UNAVAILABLE ("high demand"). That is
+ * transient, so retry the same model once, then walk down a fallback chain of
+ * stable models before giving up and letting the caller use its rules engine.
+ */
+const AI_MODEL_CHAIN = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+const TRANSIENT_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+
+function isTransientAiError(err: unknown): boolean {
+  const e = err as { status?: number; code?: number; message?: string };
+  const status = Number(e?.status || e?.code || 0);
+  if (TRANSIENT_STATUSES.has(status)) return true;
+  const msg = String(e?.message || '');
+  return /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|rate limit/i.test(msg);
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function generateWithFallback(
+  ai: GoogleGenAI,
+  request: Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'>
+): Promise<{ response: Awaited<ReturnType<GoogleGenAI['models']['generateContent']>>; model: string }> {
+  let lastError: unknown;
+
+  for (const model of AI_MODEL_CHAIN) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({ ...request, model } as never);
+        if (attempt > 0 || model !== AI_MODEL_CHAIN[0]) {
+          console.warn(`[AI] recovered on ${model} after transient failure on ${AI_MODEL_CHAIN[0]}`);
+        }
+        return { response, model };
+      } catch (err) {
+        lastError = err;
+        // A non-transient error means the request itself is wrong (bad key,
+        // malformed prompt), so fail fast instead of burning the whole chain.
+        if (!isTransientAiError(err)) throw err;
+        if (attempt === 1) break;
+        console.warn(`[AI] transient failure on ${model}, retrying once:`, describeAiError(err));
+        await sleep(400);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 app.post('/api/auth/register', (req, res) => {
   try {
     const { userId } = req.body;
@@ -566,15 +613,12 @@ Respond STRICTLY with a valid JSON object with these keys:
 }
 Return ONLY the raw JSON without markdown code fences.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt
-      });
+      const { response, model } = await generateWithFallback(ai, { contents: prompt });
 
       const text = response.text || '';
       const cleanJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
-      return res.json({ success: true, swap: parsed, engine: 'gemini-3.8-flash' });
+      return res.json({ success: true, swap: parsed, engine: model });
     } catch (aiErr) {
       console.warn('[AI] inflation-swap fell back to rules engine:', describeAiError(aiErr));
     }
@@ -723,8 +767,7 @@ Respond strictly in JSON without markdown code fences:
   "summary": "string"
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const { response, model } = await generateWithFallback(ai, {
         contents: [
           {
             role: 'user',
@@ -744,7 +787,7 @@ Respond strictly in JSON without markdown code fences:
       const text = response.text || '';
       const cleanJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
-      return res.json({ success: true, result: parsed, engine: 'gemini-3.8-flash' });
+      return res.json({ success: true, result: parsed, engine: model });
     } catch (aiErr) {
       console.warn('[AI] pantry-scan fell back to rules engine:', describeAiError(aiErr));
     }
@@ -849,15 +892,12 @@ Respond strictly in JSON without markdown code fences:
   "appetizingHighlight": "string"
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt
-      });
+      const { response, model } = await generateWithFallback(ai, { contents: prompt });
 
       const text = response.text || '';
       const cleanJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
-      return res.json({ success: true, visualDetails: parsed, engine: 'gemini-3.8-flash' });
+      return res.json({ success: true, visualDetails: parsed, engine: model });
     } catch (aiErr) {
       console.warn('[AI] meal-visual fell back to rules engine:', describeAiError(aiErr));
     }
