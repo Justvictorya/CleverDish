@@ -71,7 +71,7 @@ export const FreezerVaultModal: React.FC<FreezerVaultModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-stone-500 dark:text-zinc-400">
-                Cook once in family-sized pots, freeze portions, and eat in 5 minutes at ₦0 grocery spend.
+                Cook once in family-sized pots, freeze portions, and eat in 5 minutes at zero grocery spend.
               </p>
             </div>
           </div>

@@ -482,7 +482,7 @@ export default function App() {
       return i;
     }).filter(i => i.portionsRemaining > 0));
 
-    awardXp(25, 'Defrosted Vault Portion (₦0 spend)');
+    awardXp(25, 'Defrosted Vault Portion (zero grocery spend)');
 
     // Defrost effect on today's afternoon meal (or first meal found): sets cost to 0 and cook time to 5 min!
     setMeals(prev => prev.map(m => {
@@ -497,7 +497,7 @@ export default function App() {
             swappedIngredient: 'Pulled from Freezer Vault',
             newCost: 0,
             costSavingsPercent: 100,
-            rationale: 'Prepped in Big Pot batch. ₦0 grocery spend today, 5 min reheat.'
+            rationale: 'Prepped in Big Pot batch. Zero grocery spend today, 5 min reheat.'
           }
         };
       }

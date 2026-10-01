@@ -468,7 +468,7 @@ export const BodyStatisticsTab: React.FC<BodyStatisticsTabProps> = ({
                   </span>
                 </div>
                 <div className="text-xs text-stone-500 dark:text-zinc-400 mt-0.5">
-                  Batch cooking inventory: Reheat in 5 mins at ₦0 daily spend.
+                  Batch cooking inventory: Reheat in 5 mins at zero daily spend.
                 </div>
               </div>
             </div>

@@ -164,3 +164,27 @@ export const COUNTRIES: Record<CountryCode, CountryInfo> = {
     ]
   }
 };
+
+/**
+ * Localised Pro subscription price per month. Priced per market rather than
+ * converted from a single USD figure, so the amount a user sees matches the
+ * currency of the country they selected.
+ */
+export const PRO_PRICING: Record<CountryCode, { amount: number; currency: string; symbol: string }> = {
+  NG: { amount: 3500, currency: 'NGN', symbol: '₦' },
+  US: { amount: 4.99, currency: 'USD', symbol: '$' },
+  UK: { amount: 3.99, currency: 'GBP', symbol: '£' },
+  CA: { amount: 6.99, currency: 'CAD', symbol: 'C$' },
+  GH: { amount: 45, currency: 'GHS', symbol: 'GH₵' },
+  KE: { amount: 750, currency: 'KES', symbol: 'KSh' }
+};
+
+/** Format a localised Pro price for display, e.g. "₦3,500/mo". */
+export function formatProPrice(code: CountryCode): string {
+  const price = PRO_PRICING[code] || PRO_PRICING.NG;
+  // Whole amounts read better without trailing zeros; sub-unit prices need them.
+  const formatted = Number.isInteger(price.amount)
+    ? price.amount.toLocaleString()
+    : price.amount.toFixed(2);
+  return `${price.symbol}${formatted}/mo`;
+}

@@ -123,7 +123,7 @@ export const INITIAL_BADGES: CleverBadge[] = [
     tier: 'gold',
     icon: '❄️',
     description: 'Stash or defrost 3 meals in the Big Pot Freezer Vault.',
-    lore: 'True culinary wealth is having 4 prepped portions ready in 5 minutes at ₦0 spend.',
+    lore: 'True culinary wealth is having 4 prepped portions ready in 5 minutes at zero grocery spend.',
     progress: 1,
     maxProgress: 3,
     isUnlocked: false,
@@ -263,7 +263,7 @@ export const getDefaultChallenges = (userName = '', userCountry: CountryCode = '
     guidelines: [
       'Keep your daily grocery burn rate below your computed daily floor allowance.',
       'Saturdays: inspect the Saturday Market Run bulk list for ~18% savings.',
-      'Cook Big Pot batches and pull ₦0-cost defrosted meals on hectic weeknights.'
+      'Cook Big Pot batches and pull zero-cost defrosted meals on hectic weeknights.'
     ],
     durationDays: 30,
     currentDays: 12,

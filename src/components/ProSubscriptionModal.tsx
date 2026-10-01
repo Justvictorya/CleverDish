@@ -1,7 +1,7 @@
 import React from 'react';
 import { UserProfile } from '../types';
 import { Sparkles, Check, X, Shield, Crown, Zap } from 'lucide-react';
-import { COUNTRIES } from '../data/countries';
+import { COUNTRIES, formatProPrice } from '../data/countries';
 import { soundFX } from '../utils/sound';
 
 interface ProSubscriptionModalProps {
@@ -20,7 +20,7 @@ export const ProSubscriptionModal: React.FC<ProSubscriptionModalProps> = ({
   if (!isOpen) return null;
 
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
-  const proPrice = profile.country === 'NG' ? '₦3,500/mo' : '$4.99/mo';
+  const proPrice = formatProPrice(profile.country);
 
   const handleUpgrade = () => {
     soundFX.playStreakCelebration();
