@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Meal } from '../types';
-import { Camera, Layers, Sparkles } from 'lucide-react';
+import { getDishArt, type BaseKind } from '../data/dishArt';
+import { Camera, Utensils, Sparkles } from 'lucide-react';
 
 interface MealVisualizerProps {
   visualType: Meal['visualType'];
@@ -9,17 +10,80 @@ interface MealVisualizerProps {
   imageUrl?: string;
 }
 
+/** Shape of the starch on the plate, drawn large enough to be recognisable. */
+function BaseShape({ kind, accent }: { kind: BaseKind; accent: string }) {
+  switch (kind) {
+    case 'flatbread':
+      return (
+        <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-amber-200 via-amber-100 to-stone-200 border-4 border-stone-300/70 shadow-inner">
+          <span className="absolute inset-3 rounded-full border-2 border-dashed border-amber-700/25" />
+        </div>
+      );
+    case 'rice':
+      return (
+        <div className="relative w-24 h-20 rounded-[45%_45%_50%_50%] bg-gradient-to-b from-white to-stone-200 border-4 border-stone-200 shadow-md">
+          <span className="absolute inset-2 rounded-[40%_40%_50%_50%] bg-[radial-gradient(circle,rgba(0,0,0,0.10)_1px,transparent_1px)] [background-size:6px_6px]" />
+        </div>
+      );
+    case 'swallow':
+      return (
+        <div className="relative w-24 h-20 rounded-[50%_50%_45%_45%] bg-gradient-to-b from-white to-stone-200 border-4 border-stone-200 shadow-md">
+          <span className="absolute inset-3 rounded-full bg-gradient-to-b from-stone-50 to-stone-100 shadow-inner" />
+        </div>
+      );
+    case 'oats':
+      return (
+        <div className="relative w-24 h-20 rounded-[50%_50%_45%_45%] bg-gradient-to-b from-amber-100 to-amber-200 border-4 border-amber-300/60 shadow-md" />
+      );
+    case 'beans':
+      return (
+        <div className="relative w-24 h-20 rounded-[50%_50%_45%_45%] bg-gradient-to-b from-amber-800 to-amber-950 border-4 border-amber-900/40 shadow-md">
+          <span className="absolute inset-2 rounded-[45%] bg-[radial-gradient(circle,rgba(255,255,255,0.16)_1.5px,transparent_1.5px)] [background-size:7px_7px]" />
+        </div>
+      );
+    case 'pasta':
+      return (
+        <div className="relative w-24 h-20 rounded-[50%_50%_45%_45%] bg-gradient-to-b from-amber-200 to-amber-400 border-4 border-amber-500/40 shadow-md">
+          <span className="absolute inset-2 rounded-[45%] bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.28)_0_4px,transparent_4px_9px)]" />
+        </div>
+      );
+    case 'greens':
+      return (
+        <div className="relative w-24 h-20 rounded-[50%_50%_45%_45%] bg-gradient-to-b from-emerald-400 to-emerald-600 border-4 border-emerald-700/40 shadow-md">
+          <span className="absolute inset-2 rounded-[45%] bg-[repeating-radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.22)_0_6px,transparent_6px_13px)]" />
+        </div>
+      );
+    case 'egg':
+      return (
+        <div className="relative w-24 h-20 rounded-[50%_50%_45%_45%] bg-gradient-to-b from-orange-400 to-red-500 border-4 border-red-700/40 shadow-md" />
+      );
+    case 'plantain':
+    case 'root':
+      return (
+        <div className="relative w-24 h-20 rounded-[45%_45%_45%_45%] bg-gradient-to-b from-amber-400 to-amber-600 border-4 border-amber-700/40 shadow-md">
+          <span className="absolute inset-3 rounded-[40%] border-2 border-amber-200/50" />
+        </div>
+      );
+    default:
+      return <div className="w-24 h-20 rounded-[50%] bg-stone-200 border-4 border-stone-300" style={{ background: accent }} />;
+  }
+}
+
 export const MealVisualizer: React.FC<MealVisualizerProps> = ({
   visualType,
   title,
   proteinSource,
   imageUrl
 }) => {
-  const [displayMode, setDisplayMode] = useState<'photo' | 'animated'>(imageUrl ? 'photo' : 'animated');
+  const [displayMode, setDisplayMode] = useState<'photo' | 'art'>(imageUrl ? 'photo' : 'art');
+  const art = getDishArt({ title, proteinSourceType: proteinSource });
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden border border-stone-200/90 shadow-sm bg-stone-900 group">
-      {/* Switch between Real Photo and Layered Visualizer */}
+    <div
+      className="relative w-full rounded-2xl overflow-hidden border border-stone-200/90 shadow-sm group"
+      role="img"
+      aria-label={art.alt}
+    >
       {imageUrl && (
         <div className="absolute top-3 right-3 z-30 flex items-center gap-1 bg-black/60 backdrop-blur-md p-1 rounded-xl border border-white/20">
           <button
@@ -32,24 +96,23 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
             }`}
           >
             <Camera className="w-3.5 h-3.5 text-[#2ECC71]" />
-            <span>Dish Photo</span>
+            <span>Your Photo</span>
           </button>
           <button
             type="button"
-            onClick={() => setDisplayMode('animated')}
+            onClick={() => setDisplayMode('art')}
             className={`px-2.5 py-1 text-[11px] font-bold rounded-lg flex items-center gap-1.5 transition-all ${
-              displayMode === 'animated'
+              displayMode === 'art'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-white/80 hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-[#7A1C2C]" />
-            <span>Layered Art</span>
+            <Utensils className="w-3.5 h-3.5 text-[#7A1C2C]" />
+            <span>Dish</span>
           </button>
         </div>
       )}
 
-      {/* MODE 1: High-Resolution Real Gourmet Dish Photography */}
       {displayMode === 'photo' && imageUrl ? (
         <div className="relative w-full h-56 sm:h-64 overflow-hidden bg-stone-950">
           <img
@@ -58,143 +121,85 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           />
-          {/* Subtle gradient vignette */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
 
-          {/* Bottom badge with meal title & true-to-life indicator */}
           <div className="absolute bottom-3 inset-x-3 flex items-center justify-between text-xs text-white">
             <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 max-w-[75%] truncate">
               <Sparkles className="w-3.5 h-3.5 text-[#2ECC71] shrink-0" />
               <span className="font-bold truncate">{title}</span>
             </div>
             <span className="text-[10px] font-mono bg-[#2ECC71] text-white font-extrabold px-2 py-1 rounded-lg">
-              Live Photo
+              Your Photo
             </span>
           </div>
         </div>
       ) : (
-        /* MODE 2: Layered SVG/CSS Food Art Visualizer */
-        <div className="relative w-full h-56 bg-gradient-to-b from-stone-50 to-stone-100/90 flex items-center justify-center p-3 select-none">
-          {/* Background glow and subtle tablecloth texture */}
-          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#7A1C2C_1px,transparent_1px)] [background-size:16px_16px]" />
+        /* Dish art: big, literal food so the plate reads without any words. */
+        <div className="relative w-full h-64 sm:h-72 bg-gradient-to-b from-stone-50 to-stone-100 flex items-center justify-center select-none">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#7A1C2C_1px,transparent_1px)] [background-size:18px_18px]" />
 
-          {/* Steam animation puffs */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-none opacity-50 z-20">
-            <span className="inline-block w-2.5 h-6 bg-white/70 rounded-full blur-[2px] animate-pulse" />
-            <span className="inline-block w-3 h-8 bg-white/60 rounded-full blur-[2px] animate-pulse [animation-delay:400ms]" />
-            <span className="inline-block w-2.5 h-5 bg-white/70 rounded-full blur-[2px] animate-pulse [animation-delay:800ms]" />
+          {/* Steam */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-5 pointer-events-none opacity-45 z-20">
+            <span className="inline-block w-3 h-8 bg-white/80 rounded-full blur-[3px] animate-pulse" />
+            <span className="inline-block w-3.5 h-10 bg-white/70 rounded-full blur-[3px] animate-pulse [animation-delay:400ms]" />
+            <span className="inline-block w-3 h-7 bg-white/80 rounded-full blur-[3px] animate-pulse [animation-delay:800ms]" />
           </div>
 
-          {/* Ceramic plate container */}
-          <div className="relative w-40 h-40 rounded-full bg-white shadow-[0_12px_30px_rgba(0,0,0,0.08),inset_0_2px_4px_rgba(0,0,0,0.04)] border-4 border-stone-100 flex items-center justify-center p-2.5 transition-transform hover:scale-105 duration-300">
-            <div className="absolute inset-1.5 rounded-full border border-dashed border-stone-200/80 pointer-events-none" />
+          {/* The plate */}
+          <div className="relative w-56 h-56 sm:w-60 sm:h-60 rounded-full bg-white shadow-[0_18px_40px_rgba(0,0,0,0.10),inset_0_3px_6px_rgba(0,0,0,0.05)] border-[6px] border-stone-100 flex items-center justify-center">
+            <div className="absolute inset-2 rounded-full border border-dashed border-stone-200/80 pointer-events-none" />
 
-            {/* Visualizer Type 1: Jollof Bowl */}
-            {visualType === 'jollof_bowl' && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-tr from-amber-600 via-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-inner">
-                  <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
-                </div>
-                <div className="absolute top-2 right-2 w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-amber-700 opacity-90 blur-[1px] shadow-sm transform rotate-12" />
-                <div className="absolute top-5 left-5 z-10">
-                  {proteinSource === 'poultry' ? (
-                    <div className="w-12 h-10 bg-gradient-to-r from-amber-800 to-amber-700 rounded-xl shadow-md border border-amber-900/30 transform -rotate-12 flex items-center justify-center">
-                      <span className="text-base">🍗</span>
-                    </div>
-                  ) : proteinSource === 'fish' ? (
-                    <div className="w-13 h-9 bg-gradient-to-r from-stone-700 to-stone-600 rounded-lg shadow-md border border-stone-800/40 transform -rotate-6 flex items-center justify-center">
-                      <span className="text-base">🐟</span>
-                    </div>
-                  ) : (
-                    <div className="w-11 h-9 bg-gradient-to-r from-amber-900 to-red-950 rounded-xl shadow-md transform -rotate-12 flex items-center justify-center">
-                      <span className="text-base">🥩</span>
-                    </div>
-                  )}
-                </div>
-                <div className="absolute bottom-3 right-4 z-10 flex -space-x-2 transform rotate-6">
-                  <div className="w-6 h-4 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full shadow-sm border border-amber-600/30" />
-                  <div className="w-6 h-4 bg-gradient-to-br from-amber-400 to-yellow-600 rounded-full shadow-sm border border-amber-600/30" />
-                </div>
-              </div>
-            )}
+            {/* Stew / sauce pooled in the bowl */}
+            <div
+              className="absolute inset-6 rounded-full shadow-inner"
+              style={{
+                background: art.soupy
+                  ? `radial-gradient(circle at 40% 35%, ${art.sauceTo}, ${art.sauceFrom})`
+                  : `radial-gradient(circle at 50% 50%, ${art.sauceTo}55, transparent 70%)`
+              }}
+            />
 
-            {/* Visualizer Type 2: Yam & Egg Skillet */}
-            {visualType === 'yam_egg_skillet' && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-stone-100">
-                <div className="absolute top-2 left-3 w-11 h-11 rounded-full bg-gradient-to-br from-amber-50 to-stone-200 border border-stone-300/80 shadow-sm flex items-center justify-center font-bold text-stone-600 text-xs">
-                  🍠
-                </div>
-                <div className="absolute bottom-3 left-4 w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-stone-200 border border-stone-300/80 shadow-sm" />
-                <div className="absolute top-4 right-3 w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 shadow-md transform rotate-12 flex items-center justify-center">
-                  <span className="text-sm">🍳</span>
-                </div>
-              </div>
-            )}
+            {/* Starch */}
+            <div className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 z-10">
+              <BaseShape kind={art.base} accent={art.sauceFrom} />
+            </div>
 
-            {/* Visualizer Type 3: Oatmeal / Parfait Bowl */}
-            {visualType === 'oatmeal_parfait' && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-stone-100">
-                <div className="absolute inset-1 rounded-full bg-gradient-to-tr from-stone-200 via-amber-100 to-amber-50 shadow-inner" />
-                <div className="absolute top-4 left-5 flex gap-1 z-10">
-                  <div className="w-4 h-4 bg-red-600 rounded-full shadow-sm" />
-                  <div className="w-3.5 h-3.5 bg-purple-700 rounded-full shadow-sm" />
-                </div>
-                <div className="absolute bottom-4 right-4 flex -space-x-1.5 z-10">
-                  <div className="w-6 h-6 bg-amber-200 rounded-full border border-amber-300 flex items-center justify-center text-[9px]">🍌</div>
-                  <div className="w-6 h-6 bg-amber-100 rounded-full border border-amber-300" />
-                </div>
-              </div>
-            )}
+            {/* Protein: the single largest glyph so it reads at a glance */}
+            <span
+              className="absolute left-1/2 top-[36%] -translate-x-1/2 -translate-y-1/2 text-[68px] leading-none z-20 drop-shadow-[0_4px_6px_rgba(0,0,0,0.30)]"
+              role="presentation"
+            >
+              {art.protein}
+            </span>
 
-            {/* Visualizer Type 4: Beans & Plantain Porridge */}
-            {visualType === 'beans_plantain' && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-tr from-amber-900 via-amber-800 to-amber-700">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:5px_5px]" />
-                <div className="absolute top-3 left-4 flex gap-1 z-10">
-                  <div className="w-7 h-5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-lg shadow transform rotate-12" />
-                  <div className="w-7 h-5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-lg shadow transform -rotate-6" />
-                </div>
-                <div className="absolute bottom-3 right-4 z-10">
-                  <span className="text-lg">🫘</span>
-                </div>
-              </div>
-            )}
+            {/* Sides */}
+            {art.sides.slice(0, 2).map((side, i) => (
+              <span
+                key={`${side}-${i}`}
+                className="absolute text-[40px] leading-none z-20 drop-shadow-[0_3px_5px_rgba(0,0,0,0.25)]"
+                style={{
+                  bottom: i === 0 ? '12%' : '16%',
+                  left: i === 0 ? '16%' : '62%'
+                }}
+                role="presentation"
+              >
+                {side}
+              </span>
+            ))}
 
-            {/* Visualizer Type 5: Swallow & Soup */}
-            {visualType === 'stew_swallow' && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-emerald-950">
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900 via-amber-700 to-yellow-600 opacity-95" />
-                <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-stone-50 via-stone-100 to-amber-100/90 shadow-lg border border-stone-200/90 flex items-center justify-center">
-                  <span className="text-xs font-bold text-amber-950">Yam</span>
-                </div>
-              </div>
-            )}
-
-            {/* Visualizer Type 6: Grilled Fish */}
-            {visualType === 'grilled_fish' && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-stone-100">
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-800 via-slate-700 to-stone-600" />
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:5px_5px]" />
-                <div className="absolute top-3 left-4 w-7 h-5 bg-gradient-to-r from-emerald-400 to-lime-500 rounded-lg shadow transform -rotate-12" />
-                <div className="relative z-10 w-14 h-9 bg-gradient-to-r from-orange-400 to-amber-600 rounded-lg shadow-md border border-amber-700/40 transform -rotate-6 flex items-center justify-center">
-                  <span className="text-base">🐟</span>
-                </div>
-                <div className="absolute bottom-3 right-4 w-6 h-6 rounded-full bg-yellow-300/90 shadow-sm border border-yellow-500/50" />
-              </div>
-            )}
-
-            {/* Other types */}
-            {(visualType === 'chicken_salad' || visualType === 'pasta_medley') && (
-              <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-stone-100">
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-100 via-amber-50 to-emerald-50" />
-                <span className="text-2xl">{proteinSource === 'poultry' ? '🥗' : '🍝'}</span>
-              </div>
-            )}
+            {/* Garnish */}
+            <span
+              className="absolute text-[26px] leading-none z-20 opacity-90"
+              style={{ top: '18%', right: '18%' }}
+              role="presentation"
+            >
+              {art.garnish}
+            </span>
           </div>
 
-          <div className="absolute bottom-2 inset-x-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-stone-200/80 shadow-xs flex items-center justify-between text-[11px] text-stone-700">
-            <span className="font-semibold text-[#7A1C2C] truncate max-w-[140px]">{title}</span>
-            <span className="text-stone-500 font-mono">Animated Visual</span>
+          {/* Dish name for readers; the picture carries the same information for everyone else. */}
+          <div className="absolute bottom-2 inset-x-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-stone-200/80 shadow-xs">
+            <span className="font-semibold text-[#7A1C2C] truncate block">{title}</span>
           </div>
         </div>
       )}
