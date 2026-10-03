@@ -1,6 +1,63 @@
 import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
 import { COUNTRIES } from './countries';
 import { COUNTRY_CUISINES, resolveCuisineSources } from './cuisineCatalog';
+import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
+
+type ProteinKey = MealBlueprint['proteinSourceType'];
+
+/**
+ * Walk a meal pool starting at the day-rotated index, skipping anything already
+ * claimed by an earlier slot that day.
+ *
+ * Every slot used to index its own pool with `(day - 1) % pool.length`. Where a
+ * pool held a single dish — which was every local country pool — the afternoon
+ * and evening slots therefore resolved index 0 of the same array and produced
+ * an identical plate for all 28 days. Scanning forward from a distinct offset
+ * means a slot only repeats itself when the pool genuinely offers no choice.
+ */
+function pickFromPool(
+  pool: MealBlueprint[],
+  day: number,
+  offset: number,
+  exclude: Set<string>
+): MealBlueprint {
+  const size = pool.length;
+  if (size === 0) {
+    throw new Error('Cannot build a meal from an empty prototype pool');
+  }
+  const start = (((day - 1 + offset) % size) + size) % size;
+  for (let step = 0; step < size; step += 1) {
+    const candidate = pool[(start + step) % size];
+    if (!exclude.has(candidate.title)) return candidate;
+  }
+  return pool[start];
+}
+
+/**
+ * Pick a dish for a slot, keeping it clear of the titles already used that day.
+ *
+ * If the intended protein pool is too small to offer anything new, fall back to
+ * the other protein pools for this meal rather than serving a third repeat.
+ */
+function pickDistinctFromSource(
+  source: Record<ProteinKey, MealBlueprint[]>,
+  proteinType: ProteinKey,
+  day: number,
+  offset: number,
+  exclude: Set<string>
+): MealBlueprint {
+  const preferred = pickFromPool(source[proteinType], day, offset, exclude);
+  if (!exclude.has(preferred.title)) return preferred;
+
+  const others = (Object.keys(source) as ProteinKey[]).filter((key) => key !== proteinType);
+  for (let i = 0; i < others.length; i += 1) {
+    const pool = source[others[(i + day) % others.length]];
+    if (!pool || pool.length === 0) continue;
+    const alternative = pickFromPool(pool, day, offset, exclude);
+    if (!exclude.has(alternative.title)) return alternative;
+  }
+  return preferred;
+}
 
 // 5-stage sequential protein rotation cycle
 const PROTEIN_ROTATION: Array<'fish' | 'poultry' | 'eggs_dairy' | 'legumes_plant' | 'beef_lean'> = [
@@ -821,33 +878,60 @@ const CONTINENTAL_EVENING: Record<Meal['proteinSourceType'], MealBlueprint[]> = 
   ]
 };
 
+/**
+ * Fold the extra Nigerian dishes into the built-in pools.
+ *
+ * Each pool held one dish per protein, so the 28-day plan collapsed into a
+ * five-day cycle and catfish came round in the fish slots constantly.
+ */
+function mergeNigeriaPoolExtras(): void {
+  const targets: Array<[keyof typeof NIGERIA_POOL_EXTRAS, Record<ProteinKey, MealBlueprint[]>]> = [
+    ['breakfasts', INDIGENOUS_BREAKFASTS],
+    ['afternoons', INDIGENOUS_AFTERNOONS],
+    ['evenings', INDIGENOUS_EVENING]
+  ];
+  for (const [slot, pool] of targets) {
+    for (const [protein, dishes] of Object.entries(NIGERIA_POOL_EXTRAS[slot])) {
+      const bucket = pool[protein as ProteinKey];
+      if (!bucket) continue;
+      for (const dish of dishes) {
+        if (!bucket.some((existing) => existing.title === dish.title)) {
+          bucket.push(dish);
+        }
+      }
+    }
+  }
+}
+
+mergeNigeriaPoolExtras();
+
 function getMealPhoto(title: string, visualType: string): string {
   const t = title.toLowerCase();
   if (t.includes('salmon')) {
-    return '/src/assets/images/grilled_salmon_1790642194407.jpg';
+    return '/images/grilled_salmon_1790642194407.jpg';
   }
   if (t.includes('suya') || t.includes('boli') || (t.includes('beef') && t.includes('plantain'))) {
-    return '/src/assets/images/beef_suya_boli_1790642205230.jpg';
+    return '/images/beef_suya_boli_1790642205230.jpg';
   }
   if (t.includes('sweet potato') || (t.includes('shakshuka') && t.includes('egg'))) {
-    return '/src/assets/images/sweet_potato_eggs_1790642214701.jpg';
+    return '/images/sweet_potato_eggs_1790642214701.jpg';
   }
   if (t.includes('jollof') || t.includes('rice') || t.includes('quinoa') || visualType === 'jollof_bowl') {
-    return '/src/assets/images/jollof_chicken_1790641910111.jpg';
+    return '/images/jollof_chicken_1790641910111.jpg';
   }
   if (t.includes('swallow') || t.includes('egusi') || t.includes('soup') || visualType === 'stew_swallow') {
-    return '/src/assets/images/pounded_yam_egusi_1790641933918.jpg';
+    return '/images/pounded_yam_egusi_1790641933918.jpg';
   }
   if (t.includes('yam') || visualType === 'yam_egg_skillet') {
-    return '/src/assets/images/yam_fish_stew_1790641922409.jpg';
+    return '/images/yam_fish_stew_1790641922409.jpg';
   }
   if (t.includes('bean') || t.includes('moi') || t.includes('plantain') || visualType === 'beans_plantain') {
-    return '/src/assets/images/beans_plantain_1790641943763.jpg';
+    return '/images/beans_plantain_1790641943763.jpg';
   }
   if (t.includes('oat') || t.includes('parfait') || t.includes('yogurt') || visualType === 'oatmeal_parfait') {
-    return '/src/assets/images/oatmeal_parfait_1790641955682.jpg';
+    return '/images/oatmeal_parfait_1790641955682.jpg';
   }
-  return '/src/assets/images/jollof_chicken_1790641910111.jpg';
+  return '/images/jollof_chicken_1790641910111.jpg';
 }
 
 function getFoodstuffSourcing(countryCode: CountryCode, ingredients: Array<{ name: string; cost: number }>) {
@@ -960,9 +1044,11 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
     const afternoonSource = localSources.afternoon
       ?? (afternoonStyle === 'indigenous' ? INDIGENOUS_AFTERNOONS : CONTINENTAL_AFTERNOONS);
 
-    // Evening follows the morning style, and reuses the local mains when present
+    // Evening follows the morning style, and reuses the local mains when present.
+    // It gets its own offset when indexing the pool so afternoon and dinner do
+    // not resolve to the same dish.
     const eveningSource = morningStyle === 'indigenous'
-      ? (localCuisine?.mains ?? INDIGENOUS_EVENING)
+      ? (localSources.evening ?? localCuisine?.mains ?? INDIGENOUS_EVENING)
       : CONTINENTAL_EVENING;
 
     const morningIsLocal = Boolean(localSources.morning);
@@ -975,9 +1061,17 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
 
     const morningPrototypes = morningSource[proteinType];
     const afternoonPrototypes = afternoonSource[proteinType];
+    const eveningPrototypes = eveningSource[proteinType];
 
-    const morningProto = morningPrototypes[(day - 1) % morningPrototypes.length];
-    const afternoonProto = afternoonPrototypes[(day - 1) % afternoonPrototypes.length];
+    const morningProto = pickFromPool(morningPrototypes, day, 0, new Set());
+    const afternoonProto = pickFromPool(afternoonPrototypes, day, 0, new Set([morningProto.title]));
+    const eveningProto = pickDistinctFromSource(
+      eveningSource,
+      proteinType,
+      day,
+      1,
+      new Set([morningProto.title, afternoonProto.title])
+    );
 
     // Convert costs to regional currency. Every non-Nigerian pool is written on
     // a Naira reference basis, so each country applies its price index to the
@@ -1067,10 +1161,7 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       photoVerified: false
     });
 
-    // Evening Meal (Dinner) — eveningSource resolved above
-    const eveningPrototypes = eveningSource[proteinType];
-    const eveningProto = eveningPrototypes[(day - 1) % eveningPrototypes.length];
-
+    // Evening Meal (Dinner) — eveningPrototypes/eveningProto resolved above
     const eveningIngredients = eveningProto.ingredients.map((ing, idx) => ({
       id: `ing_d${day}_e_${idx}`,
       name: ing.name,

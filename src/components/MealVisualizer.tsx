@@ -76,7 +76,11 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
   imageUrl
 }) => {
   const [displayMode, setDisplayMode] = useState<'photo' | 'art'>(imageUrl ? 'photo' : 'art');
+  // A photo that 404s or fails to decode must never leave the user staring at a
+  // broken frame, so drop straight to the dish art instead.
+  const [photoFailed, setPhotoFailed] = useState(false);
   const art = getDishArt({ title, proteinSourceType: proteinSource });
+  const showPhoto = Boolean(imageUrl) && !photoFailed;
 
   return (
     <div
@@ -84,7 +88,7 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
       role="img"
       aria-label={art.alt}
     >
-      {imageUrl && (
+      {showPhoto && (
         <div className="absolute top-3 right-3 z-30 flex items-center gap-1 bg-black/60 backdrop-blur-md p-1 rounded-xl border border-white/20">
           <button
             type="button"
@@ -113,12 +117,13 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
         </div>
       )}
 
-      {displayMode === 'photo' && imageUrl ? (
+      {displayMode === 'photo' && showPhoto ? (
         <div className="relative w-full h-56 sm:h-64 overflow-hidden bg-stone-950">
           <img
             src={imageUrl}
             alt={title}
             referrerPolicy="no-referrer"
+            onError={() => setPhotoFailed(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />

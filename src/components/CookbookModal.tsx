@@ -41,7 +41,7 @@ const CURATED_SIGNATURE_RECIPES: Partial<Meal>[] = [
     fiber: 6,
     cookTimeMinutes: 35,
     visualType: 'jollof_bowl',
-    imageUrl: '/src/assets/images/jollof_chicken_1790641910111.jpg',
+    imageUrl: '/images/jollof_chicken_1790641910111.jpg',
     proteinSourceType: 'poultry',
     estimatedCost: 2600
   },
@@ -57,7 +57,7 @@ const CURATED_SIGNATURE_RECIPES: Partial<Meal>[] = [
     fiber: 9,
     cookTimeMinutes: 20,
     visualType: 'yam_egg_skillet',
-    imageUrl: '/src/assets/images/yam_fish_stew_1790641922409.jpg',
+    imageUrl: '/images/yam_fish_stew_1790641922409.jpg',
     proteinSourceType: 'fish',
     estimatedCost: 2300
   },
@@ -73,7 +73,7 @@ const CURATED_SIGNATURE_RECIPES: Partial<Meal>[] = [
     fiber: 21,
     cookTimeMinutes: 40,
     visualType: 'beans_plantain',
-    imageUrl: '/src/assets/images/beans_plantain_1790641943763.jpg',
+    imageUrl: '/images/beans_plantain_1790641943763.jpg',
     proteinSourceType: 'legumes_plant',
     estimatedCost: 1950
   },
@@ -89,7 +89,7 @@ const CURATED_SIGNATURE_RECIPES: Partial<Meal>[] = [
     fiber: 8,
     cookTimeMinutes: 25,
     visualType: 'stew_swallow',
-    imageUrl: '/src/assets/images/pounded_yam_egusi_1790641933918.jpg',
+    imageUrl: '/images/pounded_yam_egusi_1790641933918.jpg',
     proteinSourceType: 'eggs_dairy',
     estimatedCost: 2450
   },
@@ -105,7 +105,7 @@ const CURATED_SIGNATURE_RECIPES: Partial<Meal>[] = [
     fiber: 7,
     cookTimeMinutes: 22,
     visualType: 'chicken_salad',
-    imageUrl: '/src/assets/images/grilled_salmon_1790642194407.jpg',
+    imageUrl: '/images/grilled_salmon_1790642194407.jpg',
     proteinSourceType: 'fish',
     estimatedCost: 3100
   },
@@ -121,7 +121,7 @@ const CURATED_SIGNATURE_RECIPES: Partial<Meal>[] = [
     fiber: 8,
     cookTimeMinutes: 20,
     visualType: 'beans_plantain',
-    imageUrl: '/src/assets/images/beef_suya_boli_1790642205230.jpg',
+    imageUrl: '/images/beef_suya_boli_1790642205230.jpg',
     proteinSourceType: 'beef_lean',
     estimatedCost: 2500
   }
@@ -220,7 +220,7 @@ export const CookbookModal: React.FC<CookbookModalProps> = ({
                     {/* Authentic Food Photo Banner */}
                     <div className="relative w-full h-44 overflow-hidden bg-stone-900">
                       <img
-                        src={meal.imageUrl || '/src/assets/images/jollof_chicken_1790641910111.jpg'}
+                        src={meal.imageUrl || '/images/jollof_chicken_1790641910111.jpg'}
                         alt={meal.title}
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -352,7 +352,7 @@ export const CookbookModal: React.FC<CookbookModalProps> = ({
               {/* Large Image Preview */}
               <div className="relative rounded-2xl overflow-hidden aspect-16/9 bg-black border border-stone-800">
                 <img
-                  src={activeVisualModalMeal.imageUrl || '/src/assets/images/jollof_chicken_1790641910111.jpg'}
+                  src={activeVisualModalMeal.imageUrl || '/images/jollof_chicken_1790641910111.jpg'}
                   alt={activeVisualModalMeal.title}
                   className="w-full h-full object-cover"
                 />

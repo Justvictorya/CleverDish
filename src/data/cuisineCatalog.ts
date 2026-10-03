@@ -1,4 +1,5 @@
 import { CountryCode, MealBlueprint } from '../types';
+import { EXTRA_MAINS } from './cuisineMainsExtra';
 
 /**
  * Country-specific local cuisines.
@@ -494,15 +495,13 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
             'Roast over charcoal until the edges char and the juices run clear.',
             'Fluff fragrant pilau with fried onions and serve the chicken on top.'
           ]
-        }
-      ],
-      eggs_dairy: [
+        },
         {
           title: 'Ugali with Creamy Chicken Stew',
           description: 'Soft ugali scooped into a bowl of rich, peppery chicken stew with peas and carrots.',
           visualType: 'stew_swallow',
           style: 'indigenous',
-          proteinSourceType: 'eggs_dairy',
+          proteinSourceType: 'poultry',
           calories: 680,
           protein: 42,
           carbs: 68,
@@ -521,6 +520,9 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
             'Serve the stew in bowls with torn pieces of ugali soaking up the sauce.'
           ]
         }
+
+      ],
+      eggs_dairy: [
       ],
       legumes_plant: [
         {
@@ -771,15 +773,13 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
             'Toss the romaine with dressing and top with croutons and shaved parmesan.',
             'Slice the chicken over the salad and finish with cracked black pepper.'
           ]
-        }
-      ],
-      eggs_dairy: [
+        },
         {
           title: 'Fresh Pasta with Alfredo Sauce & Grilled Chicken',
           description: 'Fettuccine tossed in a garlic cream alfredo, topped with sliced grilled chicken and fresh basil.',
           visualType: 'pasta_medley',
           style: 'continental',
-          proteinSourceType: 'eggs_dairy',
+          proteinSourceType: 'poultry',
           calories: 680,
           protein: 44,
           carbs: 62,
@@ -799,6 +799,9 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
             'Toss the pasta through the sauce, then top with sliced chicken and torn basil.'
           ]
         }
+
+      ],
+      eggs_dairy: [
       ],
       legumes_plant: [
         {
@@ -1330,31 +1333,6 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
         }
       ],
       eggs_dairy: [
-        {
-          title: 'Shepherd’s Pie with Garden Peas',
-          description: 'Minced beef and vegetable filling under a fluffy mashed potato crust, baked until golden.',
-          visualType: 'stew_swallow',
-          style: 'continental',
-          proteinSourceType: 'eggs_dairy',
-          calories: 720,
-          protein: 36,
-          carbs: 76,
-          fat: 28,
-          fiber: 10,
-          cookTimeMinutes: 55,
-          readyToEatQuery: 'Shepherds Pie',
-          ingredients: [
-            { name: 'Lean Minced Beef', gramWeight: 140, baseNGNCost: 1500, protein: 32, carbs: 0, fat: 8, fiber: 0, sourcingLocation: 'Butchery' },
-            { name: 'Mashed Potato Crust', gramWeight: 250, baseNGNCost: 520, protein: 6, carbs: 52, fat: 12, fiber: 6, sourcingLocation: 'Produce Section' },
-            { name: 'Carrot, Onion & Peas', gramWeight: 170, baseNGNCost: 450, protein: 7, carbs: 26, fat: 3, fiber: 8, sourcingLocation: 'Produce Section' },
-            { name: 'Cheese & Butter', gramWeight: 25, baseNGNCost: 400, protein: 5, carbs: 1, fat: 10, fiber: 0, sourcingLocation: 'Dairy Aisle' }
-          ],
-          prepInstructions: [
-            'Brown the mince with onion, carrot and peas in gravy, then simmer until thick.',
-            'Spread into a baking dish and top with mashed potato.',
-            'Scatter with cheese, brush with butter and bake until golden and bubbling.'
-          ]
-        }
       ],
       legumes_plant: [
         {
@@ -1408,11 +1386,63 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
             'Bake the Yorkshire puddings in the beef fat until risen and crisp.',
             'Serve the stew with the puddings and greens.'
           ]
+        },
+        {
+          title: 'Shepherd’s Pie with Garden Peas',
+          description: 'Minced beef and vegetable filling under a fluffy mashed potato crust, baked until golden.',
+          visualType: 'stew_swallow',
+          style: 'continental',
+          proteinSourceType: 'beef_lean',
+          calories: 720,
+          protein: 36,
+          carbs: 76,
+          fat: 28,
+          fiber: 10,
+          cookTimeMinutes: 55,
+          readyToEatQuery: 'Shepherds Pie',
+          ingredients: [
+            { name: 'Lean Minced Beef', gramWeight: 140, baseNGNCost: 1500, protein: 32, carbs: 0, fat: 8, fiber: 0, sourcingLocation: 'Butchery' },
+            { name: 'Mashed Potato Crust', gramWeight: 250, baseNGNCost: 520, protein: 6, carbs: 52, fat: 12, fiber: 6, sourcingLocation: 'Produce Section' },
+            { name: 'Carrot, Onion & Peas', gramWeight: 170, baseNGNCost: 450, protein: 7, carbs: 26, fat: 3, fiber: 8, sourcingLocation: 'Produce Section' },
+            { name: 'Cheese & Butter', gramWeight: 25, baseNGNCost: 400, protein: 5, carbs: 1, fat: 10, fiber: 0, sourcingLocation: 'Dairy Aisle' }
+          ],
+          prepInstructions: [
+            'Brown the mince with onion, carrot and peas in gravy, then simmer until thick.',
+            'Spread into a baking dish and top with mashed potato.',
+            'Scatter with cheese, brush with butter and bake until golden and bubbling.'
+          ]
         }
+
       ]
     }
   }
 };
+
+/**
+ * Merge the extra mains into each country catalogue.
+ *
+ * Every local pool shipped with a single dish per protein, which meant the
+ * afternoon and evening slots both resolved index 0 of the same one-item array
+ * and rendered an identical plate on all 28 days. Adding further mains gives
+ * the rotation something to move through.
+ */
+function mergeExtraMains(): void {
+  for (const [code, pools] of Object.entries(EXTRA_MAINS)) {
+    const cuisine = COUNTRY_CUISINES[code as CountryCode];
+    if (!cuisine) continue;
+    for (const [protein, dishes] of Object.entries(pools)) {
+      const pool = cuisine.mains[protein as P];
+      if (!pool) continue;
+      for (const dish of dishes) {
+        if (!pool.some((existing) => existing.title === dish.title)) {
+          pool.push(dish);
+        }
+      }
+    }
+  }
+}
+
+mergeExtraMains();
 
 /**
  * Resolve which pools feed the generator for a given country + preference.
@@ -1420,6 +1450,10 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
  * Nigeria keeps its existing indigenous/continental pools. Every other country
  * uses its own local catalogue for "local" styles and falls back to the
  * continental pools when the user explicitly asks for western meal prep.
+ *
+ * Afternoon and evening are handed back separately so the generator can walk
+ * two different offsets through the same pool; returning one shared pool made
+ * the two slots always land on the same dish.
  */
 export function resolveCuisineSources(
   countryCode: CountryCode,
@@ -1428,12 +1462,14 @@ export function resolveCuisineSources(
 ): {
   morning: Record<P, MealBlueprint[]> | null;
   afternoon: Record<P, MealBlueprint[]> | null;
+  evening: Record<P, MealBlueprint[]> | null;
 } {
   const cuisine = COUNTRY_CUISINES[countryCode];
-  if (!cuisine) return { morning: null, afternoon: null };
+  if (!cuisine) return { morning: null, afternoon: null, evening: null };
   return {
     morning: morningStyle === 'indigenous' ? cuisine.breakfasts : null,
-    afternoon: afternoonStyle === 'indigenous' ? cuisine.mains : null
+    afternoon: afternoonStyle === 'indigenous' ? cuisine.mains : null,
+    evening: afternoonStyle === 'indigenous' ? cuisine.mains : null
   };
 }
 

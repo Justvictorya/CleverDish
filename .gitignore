@@ -11,3 +11,4 @@ data/price-overrides.json
 data/photos/
 data/auth-tokens.json
 data/.server-secret
+data/.vapid-keys.json
