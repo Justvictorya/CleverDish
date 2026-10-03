@@ -71,6 +71,63 @@ test('every local main pool holds more than one dish per protein', () => {
   }
 });
 
+test('every pool gives each protein at least three choices', () => {
+  // Both the local breakfasts and the shared continental pools used to hold one
+  // dish per protein, so days 1-5 repeated verbatim as days 6-10.
+  for (const [code, cuisine] of Object.entries(COUNTRY_CUISINES)) {
+    for (const [slot, pools] of [
+      ['breakfasts', cuisine!.breakfasts],
+      ['mains', cuisine!.mains]
+    ] as const) {
+      for (const [protein, pool] of Object.entries(pools)) {
+        assert.ok(
+          pool.length >= 3,
+          `${code} ${slot}.${protein} has ${pool.length} dish(es); needs at least 3`
+        );
+      }
+    }
+  }
+});
+
+test('no dish comes round more than once a week', () => {
+  // Local plans share one mains pool across afternoon and evening, so with three
+  // dishes per protein a plate lands four times in 28 days. That is the floor at
+  // this pool size, and it still reads as a varied month.
+  for (const country of EVERY_COUNTRY) {
+    for (const preference of EVERY_PREFERENCE) {
+      const counts = new Map<string, number>();
+      for (const meal of generate28DayPlan(country, preference)) {
+        counts.set(meal.title, (counts.get(meal.title) ?? 0) + 1);
+      }
+      for (const [title, times] of counts) {
+        assert.ok(
+          times <= 4,
+          `${country}/${preference} serves "${title}" ${times} times in 28 days`
+        );
+      }
+    }
+  }
+});
+
+test('a dish never repeats on back-to-back days', () => {
+  for (const country of EVERY_COUNTRY) {
+    for (const preference of EVERY_PREFERENCE) {
+      const days = byDay(generate28DayPlan(country, preference));
+      const ordered = [...days.entries()].sort((a, b) => a[0] - b[0]);
+      for (let i = 1; i < ordered.length; i += 1) {
+        const previous = Object.values(ordered[i - 1][1]);
+        const current = Object.values(ordered[i][1]);
+        for (const title of current) {
+          assert.ok(
+            !previous.includes(title),
+            `${country}/${preference} repeated "${title}" on days ${ordered[i - 1][0]} and ${ordered[i][0]}`
+          );
+        }
+      }
+    }
+  }
+});
+
 test('local plans rotate through a meaningful number of distinct mains', () => {
   for (const country of EVERY_COUNTRY) {
     const titles = new Set<string>();

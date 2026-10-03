@@ -1,5 +1,6 @@
 import { CountryCode, MealBlueprint } from '../types';
 import { EXTRA_MAINS } from './cuisineMainsExtra';
+import { COUNTRY_BREAKFAST_EXTRAS } from './breakfastsExtra';
 
 /**
  * Country-specific local cuisines.
@@ -1436,6 +1437,19 @@ function mergeExtraMains(): void {
       for (const dish of dishes) {
         if (!pool.some((existing) => existing.title === dish.title)) {
           pool.push(dish);
+        }
+      }
+    }
+    // Breakfasts were the same single-dish-per-protein story as the mains.
+    const extras = COUNTRY_BREAKFAST_EXTRAS[code as CountryCode];
+    if (extras) {
+      for (const [protein, dishes] of Object.entries(extras)) {
+        const pool = cuisine.breakfasts[protein as P];
+        if (!pool) continue;
+        for (const dish of dishes) {
+          if (!pool.some((existing) => existing.title === dish.title)) {
+            pool.push(dish);
+          }
         }
       }
     }

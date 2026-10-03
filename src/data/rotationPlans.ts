@@ -2,6 +2,7 @@ import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
 import { COUNTRIES } from './countries';
 import { COUNTRY_CUISINES, resolveCuisineSources } from './cuisineCatalog';
 import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
+import { CONTINENTAL_POOL_EXTRAS } from './continentalPoolsExtra';
 
 type ProteinKey = MealBlueprint['proteinSourceType'];
 
@@ -904,6 +905,28 @@ function mergeNigeriaPoolExtras(): void {
 }
 
 mergeNigeriaPoolExtras();
+
+/** Same single-dish-per-protein problem, in the pools every market shares. */
+function mergeContinentalPoolExtras(): void {
+  const targets: Array<[keyof typeof CONTINENTAL_POOL_EXTRAS, Record<ProteinKey, MealBlueprint[]>]> = [
+    ['morning', CONTINENTAL_BREAKFASTS],
+    ['afternoon', CONTINENTAL_AFTERNOONS],
+    ['evening', CONTINENTAL_EVENING]
+  ];
+  for (const [slot, pool] of targets) {
+    for (const [protein, dishes] of Object.entries(CONTINENTAL_POOL_EXTRAS[slot])) {
+      const bucket = pool[protein as ProteinKey];
+      if (!bucket) continue;
+      for (const dish of dishes) {
+        if (!bucket.some((existing) => existing.title === dish.title)) {
+          bucket.push(dish);
+        }
+      }
+    }
+  }
+}
+
+mergeContinentalPoolExtras();
 
 function getMealPhoto(title: string, visualType: string): string {
   const t = title.toLowerCase();
