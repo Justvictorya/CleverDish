@@ -61,6 +61,10 @@ function pickDistinctFromSource(
 }
 
 // 5-stage sequential protein rotation cycle
+// Breakfast, afternoon and evening. Protein rotation steps per meal, so this
+// count is part of the arithmetic that keeps a day's three proteins distinct.
+const SLOTS_PER_DAY = 3;
+
 const PROTEIN_ROTATION: Array<'fish' | 'poultry' | 'eggs_dairy' | 'legumes_plant' | 'beef_lean'> = [
   'fish',
   'poultry',
@@ -1037,10 +1041,16 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
   // Local cuisine catalogue (undefined for Nigeria, which uses the built-in pools)
   const localCuisine = COUNTRY_CUISINES[country.code] || null;
 
+  // Proteins cycle across the whole day, not once per day. Indexing by day alone
+  // handed the same protein to breakfast, lunch and dinner, so a catfish
+  // morning arrived as catfish lunch and catfish dinner as well, then repeated
+  // every five days. Stepping one protein per meal means the three meals in a day
+  // always differ. Because 3 and 5 are coprime, every slot still meets every
+  // protein at the same even rate across the 28 days.
+  const proteinForSlot = (day: number, slot: number) =>
+    PROTEIN_ROTATION[((day - 1) * SLOTS_PER_DAY + slot) % PROTEIN_ROTATION.length];
+
   for (let day = 1; day <= 28; day++) {
-    // Sequential protein rotation: rotates through 5 protein types deterministically
-    const proteinIndex = (day - 1) % PROTEIN_ROTATION.length;
-    const proteinType = PROTEIN_ROTATION[proteinIndex];
 
     // Determine style based on user preference or alternate on balanced
     let morningStyle: 'indigenous' | 'continental' = 'indigenous';
@@ -1082,15 +1092,19 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
     const sourcingLabel = (ing: { name: string; sourcingLocation: string }, isLocal: boolean) =>
       isLocal ? ing.sourcingLocation : `${country.defaultMarkets[0]} (${ing.name})`;
 
-    const morningPrototypes = morningSource[proteinType];
-    const afternoonPrototypes = afternoonSource[proteinType];
-    const eveningPrototypes = eveningSource[proteinType];
+    const morningProtein = proteinForSlot(day, 0);
+    const afternoonProtein = proteinForSlot(day, 1);
+    const eveningProtein = proteinForSlot(day, 2);
+
+    const morningPrototypes = morningSource[morningProtein];
+    const afternoonPrototypes = afternoonSource[afternoonProtein];
+    const eveningPrototypes = eveningSource[eveningProtein];
 
     const morningProto = pickFromPool(morningPrototypes, day, 0, new Set());
     const afternoonProto = pickFromPool(afternoonPrototypes, day, 0, new Set([morningProto.title]));
     const eveningProto = pickDistinctFromSource(
       eveningSource,
-      proteinType,
+      eveningProtein,
       day,
       1,
       new Set([morningProto.title, afternoonProto.title])

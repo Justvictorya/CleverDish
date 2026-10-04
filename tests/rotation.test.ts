@@ -233,3 +233,58 @@ test('generated meals point at photos that are actually served', () => {
     );
   }
 });
+
+test("a day's three meals never share one protein", () => {
+  // The rotation used to be indexed by day alone, so all three meals on a given
+  // day drew the same protein: catfish breakfast, catfish lunch, catfish dinner.
+  // One catfish dish therefore showed up three times a row and recurred every
+  // fifth day. Proteins now step once per meal.
+  const countries = ['NG', 'GH', 'KE', 'US', 'CA', 'UK'] as const;
+  const preferences = ['indigenous', 'balanced', 'continental'] as const;
+
+  for (const country of countries) {
+    for (const preference of preferences) {
+      const plan = generate28DayPlan(country, preference);
+      const label = `${country}/${preference}`;
+
+      for (let day = 0; day < 28; day++) {
+        const dayMeals = plan.slice(day * 3, day * 3 + 3);
+        const proteins = dayMeals.map((m) => m.proteinSourceType);
+
+        assert.equal(
+          new Set(proteins).size,
+          3,
+          `${label} day ${day + 1} repeated a protein: ${proteins.join(', ')}`
+        );
+      }
+    }
+  }
+});
+
+test('no protein repeats back to back within a slot', () => {
+  // Complements the same fix: crossing a day boundary must not hand the same
+  // protein to two consecutive meals either.
+  const plan = generate28DayPlan('NG', 'indigenous');
+
+  for (let i = 1; i < plan.length; i++) {
+    assert.notEqual(
+      plan[i].proteinSourceType,
+      plan[i - 1].proteinSourceType,
+      `meals ${i} and ${i + 1} share ${plan[i].proteinSourceType}`
+    );
+  }
+});
+
+test('catfish never lands twice in one day', () => {
+  const plan = generate28DayPlan('NG', 'indigenous');
+
+  for (let day = 0; day < 28; day++) {
+    const catfishThatDay = plan
+      .slice(day * 3, day * 3 + 3)
+      .filter((m) => /catfish/i.test(m.title));
+    assert.ok(
+      catfishThatDay.length <= 1,
+      `day ${day + 1} served catfish ${catfishThatDay.length} times`
+    );
+  }
+});

@@ -68,8 +68,9 @@ import { soundFX } from './utils/sound';
 // they were given until it changes. v2 predates the larger catalogues, so anyone
 // who onboarded before that was still served the old fifteen-dish Nigerian plan
 // with dead /src/assets image paths, and no amount of fixing the generator would
-// have reached them.
-const MEAL_PLAN_VERSION = 3;
+// have reached them. v3 fixed the catalogue size; v4 changes which protein each
+// meal gets, so cached v3 plans still serve one protein per day.
+const MEAL_PLAN_VERSION = 4;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',
