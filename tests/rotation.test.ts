@@ -175,13 +175,23 @@ test('the Nigerian plan is no longer a five-day cycle', () => {
 
 test('catfish no longer fills every Nigerian fish slot', () => {
   // Catfish was the only fish in the afternoon and evening pools, so it came
-  // round constantly. It should stay available but no longer dominate.
+  // round constantly. It should stay available, it is a staple, but it must not
+  // dominate the fish slots or turn up in unrelated dishes.
   const plan = generate28DayPlan('NG', 'indigenous');
-  const catfish = plan.filter((meal) => /catfish/i.test(meal.title));
-  assert.ok(catfish.length > 0, 'catfish should still be on the menu');
+
+  const catfishMeals = plan.filter((meal) => /catfish/i.test(meal.title));
+  assert.ok(catfishMeals.length > 0, 'catfish should still be on the menu');
   assert.ok(
-    catfish.length <= 6,
-    `catfish filled ${catfish.length} of 84 Nigerian meals; expected it to be diluted`
+    catfishMeals.length <= 6,
+    `catfish was the dish for ${catfishMeals.length} of 84 Nigerian meals; expected it to be diluted`
+  );
+
+  const withCatfishIngredient = plan.filter((meal) =>
+    meal.ingredients.some((item) => /catfish/i.test(item.name))
+  );
+  assert.ok(
+    withCatfishIngredient.length <= 8,
+    `catfish appears in the ingredients of ${withCatfishIngredient.length} of 84 meals`
   );
 
   const fishDishes = new Set(
@@ -190,6 +200,13 @@ test('catfish no longer fills every Nigerian fish slot', () => {
   assert.ok(
     fishDishes.size >= 8,
     `only ${fishDishes.size} distinct fish dishes across the cycle`
+  );
+
+  // A majority-catfish fish rotation is the failure mode being guarded against.
+  const catfishFishDishes = [...fishDishes].filter((title) => /catfish/i.test(title));
+  assert.ok(
+    catfishFishDishes.length * 2 <= fishDishes.size,
+    `${catfishFishDishes.length} of ${fishDishes.size} fish dishes are catfish`
   );
 });
 

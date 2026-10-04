@@ -4,7 +4,12 @@ const STATIC_CACHE = 'cleverdish-shell-v1';
 const ASSET_CACHE = 'cleverdish-assets-v1';
 
 // Bumped whenever the caching strategy changes so old caches are dropped.
-const CACHE_VERSION = 'v2';
+// v3 drops the v2 asset cache, which had filled with the HTML that production
+// returned for the old /src/assets/images/*.jpg paths, stored as if it were an
+// image. Those entries were poison: they looked like cached photos but decoded
+// as markup, so every meal card showed a broken frame even after the paths were
+// fixed.
+const CACHE_VERSION = 'v3';
 const CURRENT_ASSET_CACHE = `${ASSET_CACHE}-${CACHE_VERSION}`;
 const MAX_CACHED_ASSETS = 60;
 

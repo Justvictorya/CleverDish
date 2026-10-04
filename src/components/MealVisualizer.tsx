@@ -77,10 +77,15 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
 }) => {
   const [displayMode, setDisplayMode] = useState<'photo' | 'art'>(imageUrl ? 'photo' : 'art');
   // A photo that 404s or fails to decode must never leave the user staring at a
-  // broken frame, so drop straight to the dish art instead.
+  // broken frame, so drop straight to the dish art instead. The toggle stays put
+  // so the photo can still be retried rather than disappearing for good.
   const [photoFailed, setPhotoFailed] = useState(false);
   const art = getDishArt({ title, proteinSourceType: proteinSource });
   const showPhoto = Boolean(imageUrl) && !photoFailed;
+  const choosePhoto = () => {
+    setPhotoFailed(false);
+    setDisplayMode('photo');
+  };
 
   return (
     <div
@@ -88,13 +93,13 @@ export const MealVisualizer: React.FC<MealVisualizerProps> = ({
       role="img"
       aria-label={art.alt}
     >
-      {showPhoto && (
+      {imageUrl && (
         <div className="absolute top-3 right-3 z-30 flex items-center gap-1 bg-black/60 backdrop-blur-md p-1 rounded-xl border border-white/20">
           <button
             type="button"
-            onClick={() => setDisplayMode('photo')}
+            onClick={choosePhoto}
             className={`px-2.5 py-1 text-[11px] font-bold rounded-lg flex items-center gap-1.5 transition-all ${
-              displayMode === 'photo'
+              displayMode === 'photo' && showPhoto
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-white/80 hover:text-white'
             }`}
