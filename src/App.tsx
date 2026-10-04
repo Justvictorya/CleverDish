@@ -74,8 +74,9 @@ import { soundFX } from './utils/sound';
 // cached v4 plans keep serving sushi, couscous and shakshuka. v5 does the same
 // for Ghana, which was serving chicken katsu, suya and coleslaw. v6 fixed the
 // same class of error in Nigeria: soups were being handed over with an egg roll
-// instead of a swallow.
-const MEAL_PLAN_VERSION = 7;
+// instead of a swallow. v7 gives Nigeria the soups it actually eats, and stops
+// the rotation from being unable to reach them.
+const MEAL_PLAN_VERSION = 8;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',

@@ -1358,7 +1358,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Jute Mallow Soup with Goat and Crayfish',
+        title: 'Jute Mallow Soup with Goat and Crayfish and Amala',
         description:
           'A slimy green soup of jute mallow leaves with goat meat and crayfish, thickened with potash.',
         visualType: 'stew_swallow',
@@ -1370,7 +1370,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 24,
         fiber: 8,
         cookTimeMinutes: 75,
-        readyToEatQuery: 'Jute Mallow Soup with Goat and Crayfish',
+        readyToEatQuery: 'Jute Mallow Soup with Goat and Crayfish with Amala',
         ingredients: [
           { name: 'Jute Mallow Leaves (Ewedu)', gramWeight: 180, baseNGNCost: 380, protein: 8, carbs: 12, fat: 2, fiber: 6, sourcingLocation: 'Vegetable Stalls' },
           { name: 'Goat Meat Pieces', gramWeight: 175, baseNGNCost: 1950, protein: 42, carbs: 0, fat: 10, fiber: 0, sourcingLocation: 'Butcher Shop' },
@@ -1413,7 +1413,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Collard Green Stew with Crayfish and Meat',
+        title: 'Collard Green Stew with Crayfish and Meat and Eba',
         description:
           'Efo shoko greens cooked down with crayfish, assorted meat and pepper into a thick, peppery green stew.',
         visualType: 'stew_swallow',
@@ -1425,14 +1425,15 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 28,
         fiber: 10,
         cookTimeMinutes: 70,
-        readyToEatQuery: 'Collard Green Stew with Crayfish and Meat',
+        readyToEatQuery: 'Collard Green Stew with Crayfish and Meat with Eba',
         ingredients: [
           { name: 'Efo Shoko / Lagos Spinach', gramWeight: 200, baseNGNCost: 400, protein: 10, carbs: 14, fat: 2, fiber: 8, sourcingLocation: 'Vegetable Stalls' },
           { name: 'Assorted Meat (Beef & Chicken)', gramWeight: 170, baseNGNCost: 1900, protein: 42, carbs: 0, fat: 10, fiber: 0, sourcingLocation: 'Butcher Shop' },
           { name: 'Ground Crayfish & Iru', gramWeight: 25, baseNGNCost: 240, protein: 5, carbs: 3, fat: 1, fiber: 1, sourcingLocation: 'Traditional Condiments' },
           { name: 'Red Palm Oil & Pepper', gramWeight: 18, baseNGNCost: 230, protein: 1, carbs: 2, fat: 13, fiber: 1, sourcingLocation: 'Traditional Condiments' },
-          { name: 'Amala (Yam Flour Swallow)', gramWeight: 120, baseNGNCost: 620, protein: 4, carbs: 33, fat: 1, fiber: 3, sourcingLocation: 'Grain Stall' }
-        ],
+          { name: 'Amala (Yam Flour Swallow)', gramWeight: 120, baseNGNCost: 620, protein: 4, carbs: 33, fat: 1, fiber: 3, sourcingLocation: 'Grain Stall' },
+        
+        { name: 'Eba', gramWeight: 180, baseNGNCost: 400, protein: 3, carbs: 44, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' },],
         prepInstructions: [
           'Blend some of the greens to a smooth paste.',
           'Fry the crayfish, iru and pepper in palm oil until fragrant.',
@@ -1441,7 +1442,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Bitter Leaf Soup with Beef and Stockfish',
+        title: 'Bitter Leaf Soup with Beef and Stockfish and Fufu',
         description:
           'Bitter leaves cooked with beef, stockfish and palm oil until soft, one of the most requested soups in the country.',
         visualType: 'stew_swallow',
@@ -1453,14 +1454,15 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 26,
         fiber: 8,
         cookTimeMinutes: 85,
-        readyToEatQuery: 'Bitter Leaf Soup with Beef and Stockfish',
+        readyToEatQuery: 'Bitter Leaf Soup with Beef and Stockfish with Fufu',
         ingredients: [
           { name: 'Bitter Leaves (Ofe Onugbu)', gramWeight: 190, baseNGNCost: 400, protein: 11, carbs: 12, fat: 2, fiber: 7, sourcingLocation: 'Vegetable Stalls' },
           { name: 'Beef Chunks', gramWeight: 170, baseNGNCost: 1700, protein: 41, carbs: 0, fat: 9, fiber: 0, sourcingLocation: 'Butcher Shop' },
           { name: 'Stockfish & Crayfish', gramWeight: 40, baseNGNCost: 480, protein: 20, carbs: 0, fat: 3, fiber: 0, sourcingLocation: 'Fish Counter' },
           { name: 'Red Palm Oil & Pepper', gramWeight: 18, baseNGNCost: 230, protein: 1, carbs: 2, fat: 13, fiber: 1, sourcingLocation: 'Traditional Condiments' },
-          { name: 'Pounded Yam', gramWeight: 130, baseNGNCost: 680, protein: 4, carbs: 35, fat: 1, fiber: 3, sourcingLocation: 'Produce Aisle' }
-        ],
+          { name: 'Pounded Yam', gramWeight: 130, baseNGNCost: 680, protein: 4, carbs: 35, fat: 1, fiber: 3, sourcingLocation: 'Produce Aisle' },
+        
+        { name: 'Fufu', gramWeight: 190, baseNGNCost: 520, protein: 5, carbs: 46, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' },],
         prepInstructions: [
           'Wash the bitter leaves repeatedly in salt water until the bitterness is gone.',
           'Simmer the beef with stockfish until tender.',
@@ -1524,7 +1526,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Pumpkin Leaf and Waterleaf Soup with Beef',
+        title: 'Pumpkin Leaf and Waterleaf Soup with Beef and Pounded Yam',
         description:
           'Pumpkin leaf and waterleaf cooked together with beef, dry fish and palm oil into a smooth, green soup.',
         visualType: 'stew_swallow',
@@ -1536,14 +1538,15 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 24,
         fiber: 9,
         cookTimeMinutes: 85,
-        readyToEatQuery: 'Pumpkin Leaf and Waterleaf Soup with Beef',
+        readyToEatQuery: 'Pumpkin Leaf and Waterleaf Soup with Beef with Pounded Yam',
         ingredients: [
           { name: 'Pumpkin Leaf & Waterleaf', gramWeight: 200, baseNGNCost: 420, protein: 11, carbs: 15, fat: 2, fiber: 7, sourcingLocation: 'Vegetable Stalls' },
           { name: 'Beef Chunks', gramWeight: 170, baseNGNCost: 1700, protein: 41, carbs: 0, fat: 9, fiber: 0, sourcingLocation: 'Butcher Shop' },
           { name: 'Dry Fish & Crayfish', gramWeight: 40, baseNGNCost: 460, protein: 18, carbs: 0, fat: 3, fiber: 0, sourcingLocation: 'Fish Counter' },
           { name: 'Red Palm Oil & Pepper', gramWeight: 18, baseNGNCost: 230, protein: 1, carbs: 2, fat: 13, fiber: 1, sourcingLocation: 'Traditional Condiments' },
-          { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' }
-        ],
+          { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' },
+        
+        { name: 'Pounded Yam', gramWeight: 200, baseNGNCost: 380, protein: 3, carbs: 76, fat: 0, fiber: 3, sourcingLocation: 'Yam Stall' },],
         prepInstructions: [
           'Blend some of the leaves to a smooth paste.',
           'Simmer the beef with the dry fish until the flavours combine.',

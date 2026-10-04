@@ -446,7 +446,9 @@ test('a Nigerian soup is served with a swallow, never a snack', () => {
   const snacks = /\b(egg roll|spring roll|puff-?puff|chin chin|cake|biscuit|samosa|roll)\b/i;
   const soupWords = /\b(soup|stew)\b/i;
   const swallow =
-    /garri|semo|eba|fufu|pounded yam|pounded plantain|amala|swallow|tuwo|\bpusu\b|\bpounded\b/i;
+    // Kwacoco and semovita count: kwacoco is a cocoyam pudding eaten as the
+    // starch, and semovita is flour sold as "swallow" on its own packet.
+    /garri|semo|eba|fufu|pounded yam|pounded plantain|amala|swallow|tuwo|kwacoco|semovita|\bpusu\b|\bpounded\b/i;
 
   // Indigenous only. The balanced plan mixes in the continental pool, which
   // exists to serve food from elsewhere, so a couscous bowl there is not a

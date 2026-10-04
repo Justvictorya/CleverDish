@@ -3,6 +3,7 @@ import { COUNTRIES } from './countries';
 import { COUNTRY_CUISINES, dishKey, resolveCuisineSources } from './cuisineCatalog';
 import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
 import { NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS } from './nigeriaAuthenticPools';
+import { NIGERIA_SOUP_CATALOGUE } from './nigeriaSoupCatalogue';
 import { CONTINENTAL_POOL_EXTRAS } from './continentalPoolsExtra';
 
 type ProteinKey = MealBlueprint['proteinSourceType'];
@@ -27,12 +28,25 @@ function pickFromPool(
   if (size === 0) {
     throw new Error('Cannot build a meal from an empty prototype pool');
   }
-  const start = (((day - 1 + offset) % size) + size) % size;
+  // Walk the pool with a stride coprime to its length instead of one index at a
+  // time. Slots cycle through five proteins across 28 days, so a given bucket is
+  // only visited six or so times, and indexing it by the visit count alone served
+  // only its first six entries. Every dish past that was unreachable no matter how
+  // much was researched and added, which is why a pool holding thirty soups kept
+  // serving the same six non-soup plates. A coprime stride keeps the scan visiting
+  // the whole pool, and still covers every index exactly once.
+  let stride = 2;
+  while (gcd(stride, size) !== 1) stride += 1;
+  const start = ((((day - 1 + offset) * stride) % size) + size) % size;
   for (let step = 0; step < size; step += 1) {
-    const candidate = pool[(start + step) % size];
+    const candidate = pool[(start + step * stride) % size];
     if (!exclude.has(candidate.title)) return candidate;
   }
   return pool[start];
+}
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
 }
 
 /**
@@ -841,6 +855,14 @@ const CONTINENTAL_EVENING: Record<Meal['proteinSourceType'], MealBlueprint[]> = 
  *
  * Each pool held one dish per protein, so the 28-day plan collapsed into a
  * five-day cycle and catfish came round in the fish slots constantly.
+ *
+ * New dishes are interleaved with the existing ones rather than appended. That
+ * detail matters more than it looks: a slot only visits its protein about
+ * seventeen times across 28 days, and it walks the pool from the front, so a
+ * pool of thirty dishes only ever reaches its first seventeen entries. Appending
+ * put every new soup in the tail, where the rotation could not see it, and the
+ * plan went on serving the same handful of non-soup plates while a hundred-odd
+ * researched dishes sat unreachable behind them.
  */
 function mergeNigeriaPoolExtras(): void {
   const targets: Array<[keyof typeof NIGERIA_POOL_EXTRAS, Record<ProteinKey, MealBlueprint[]>]> = [
@@ -848,22 +870,31 @@ function mergeNigeriaPoolExtras(): void {
     ['afternoons', INDIGENOUS_AFTERNOONS],
     ['evenings', INDIGENOUS_EVENING]
   ];
-  for (const source of [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS]) {
-    for (const [slot, pool] of targets) {
-      for (const [protein, dishes] of Object.entries(source[slot])) {
-        const bucket = pool[protein as ProteinKey];
-        if (!bucket) continue;
-        for (const dish of dishes) {
-          if (!bucket.some((existing) => dishKey(existing.title) === dishKey(dish.title))) {
-            bucket.push(dish);
-          }
+  for (const [slot, pool] of targets) {
+    for (const [protein, bucket] of Object.entries(pool)) {
+      const existing = [...bucket];
+      const added: MealBlueprint[] = [];
+      for (const source of [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS, NIGERIA_SOUP_CATALOGUE]) {
+        for (const dish of source[slot][protein as ProteinKey] ?? []) {
+          if (existing.some((e) => dishKey(e.title) === dishKey(dish.title))) continue;
+          if (added.some((a) => dishKey(a.title) === dishKey(dish.title))) continue;
+          added.push(dish);
         }
       }
+      if (added.length === 0) continue;
+      // Alternate old and new so any prefix of the pool contains both.
+      const woven: MealBlueprint[] = [];
+      for (let i = 0; i < Math.max(existing.length, added.length); i += 1) {
+        if (added[i]) woven.push(added[i]);
+        if (existing[i]) woven.push(existing[i]);
+      }
+      pool[protein as ProteinKey] = woven;
     }
   }
 }
 
 mergeNigeriaPoolExtras();
+
 
 /** Same single-dish-per-protein problem, in the pools every market shares. */
 function mergeContinentalPoolExtras(): void {
