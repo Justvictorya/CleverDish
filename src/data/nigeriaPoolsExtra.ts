@@ -68,31 +68,6 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
     ],
     poultry: [
       {
-        title: 'Chicken Egg Roll with Warm Yam & Pap',
-        description: 'A soft rolled crepe filled with spiced shredded chicken, served with warm yam and pap.',
-        visualType: 'yam_egg_skillet',
-        style: 'indigenous',
-        proteinSourceType: 'poultry',
-        calories: 620,
-        protein: 38,
-        carbs: 60,
-        fat: 22,
-        fiber: 7,
-        cookTimeMinutes: 35,
-        readyToEatQuery: 'Chicken Egg Roll with Yam',
-        ingredients: [
-          { name: 'Chicken Breast', gramWeight: 150, baseNGNCost: 1150, protein: 34, carbs: 0, fat: 5, fiber: 0, sourcingLocation: 'Oyingbo Market, Lagos' },
-          { name: 'Eggs', gramWeight: 120, baseNGNCost: 440, protein: 13, carbs: 1, fat: 9, fiber: 0, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Flour Wrap', gramWeight: 80, baseNGNCost: 260, protein: 8, carbs: 34, fat: 4, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Boiled Yam', gramWeight: 180, baseNGNCost: 420, protein: 6, carbs: 38, fat: 1, fiber: 5, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Season and shred the cooked chicken with onion and pepper.',
-          'Whisk the eggs with flour and water into a thin crepe, then fill and roll.',
-          'Serve with boiled yam and a bowl of pap.',
-        ]
-      },
-      {
         title: 'Fried Chicken Breast with Akara Beans & Chilled Pap',
         description: 'A lightly spiced fried chicken breast served with chilled pap and bean fritters.',
         visualType: 'chicken_salad',
@@ -198,31 +173,6 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
       }
     ],
     beef_lean: [
-      {
-        title: 'Beef Akara Rolls with Chilled Pap & Tomato',
-        description: 'Crisp spring-roll wrappers packed with seasoned minced beef, fried and served with chilled pap.',
-        visualType: 'beans_plantain',
-        style: 'indigenous',
-        proteinSourceType: 'beef_lean',
-        calories: 600,
-        protein: 34,
-        carbs: 58,
-        fat: 22,
-        fiber: 8,
-        cookTimeMinutes: 45,
-        readyToEatQuery: 'Beef Akara Rolls with Pap',
-        ingredients: [
-          { name: 'Lean Beef Mince', gramWeight: 150, baseNGNCost: 1750, protein: 32, carbs: 0, fat: 9, fiber: 0, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Spring Roll Wrappers', gramWeight: 80, baseNGNCost: 320, protein: 6, carbs: 38, fat: 6, fiber: 3, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Chilled Corn Pap', gramWeight: 220, baseNGNCost: 360, protein: 6, carbs: 60, fat: 1, fiber: 3, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Tomato & Onion Salad', gramWeight: 120, baseNGNCost: 200, protein: 2, carbs: 14, fat: 4, fiber: 4, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Season the mince with onion, pepper and garlic, and cook until dry.',
-          'Wrap in spring roll skins, roll tightly and fry until crisp.',
-          'Serve with chilled pap and tomato salad.',
-        ]
-      },
       {
         title: 'Suya-Spiced Beef Omelette with Fried Yam',
         description: 'Shredded suya-spiced beef folded into eggs, served with fried yam.',
@@ -469,31 +419,6 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
           ],
     eggs_dairy: [
       {
-        title: 'Egg Roll with Garden Egg Stew',
-        description: 'Rolled egg and onion in a thin pancake, served with a spiced garden egg (eggplant) stew.',
-        visualType: 'stew_swallow',
-        style: 'indigenous',
-        proteinSourceType: 'eggs_dairy',
-        calories: 560,
-        protein: 26,
-        carbs: 52,
-        fat: 22,
-        fiber: 9,
-        cookTimeMinutes: 40,
-        readyToEatQuery: 'Egg Roll with Garden Egg Stew',
-        ingredients: [
-          { name: 'Eggs', gramWeight: 150, baseNGNCost: 560, protein: 16, carbs: 1, fat: 11, fiber: 0, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Egg Roll Wrapper', gramWeight: 70, baseNGNCost: 240, protein: 7, carbs: 32, fat: 4, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Garden Egg Stew', gramWeight: 220, baseNGNCost: 400, protein: 6, carbs: 22, fat: 14, fiber: 10, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Tomato & Pepper', gramWeight: 140, baseNGNCost: 220, protein: 3, carbs: 16, fat: 4, fiber: 5, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Whisk eggs with sliced onion and season well.',
-          'Cook thin omelettes, fill with more egg and roll.',
-          'Serve with garden egg stew.',
-        ]
-      },
-      {
         title: 'Bread & Custard with Boiled Egg & Steamed Yam',
         description: 'A soft custard with bread, accompanied by a boiled egg and steamed yam.',
         visualType: 'oatmeal_parfait',
@@ -545,31 +470,6 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
           'Serve with steamed vegetables.',
         ]
       },
-      {
-        title: 'Soya Mock Meat Stir-Fry with Rice',
-        description: 'Spiced soya chunks stir-fried with peppers and onion, served with rice.',
-        visualType: 'stew_swallow',
-        style: 'indigenous',
-        proteinSourceType: 'legumes_plant',
-        calories: 590,
-        protein: 30,
-        carbs: 64,
-        fat: 20,
-        fiber: 12,
-        cookTimeMinutes: 35,
-        readyToEatQuery: 'Soya Mock Meat Stir-Fry',
-        ingredients: [
-          { name: 'Soya Chunks', gramWeight: 180, baseNGNCost: 700, protein: 32, carbs: 18, fat: 10, fiber: 14, sourcingLocation: 'Onitsha Main Market' },
-          { name: 'Bell Pepper & Onion', gramWeight: 200, baseNGNCost: 340, protein: 5, carbs: 24, fat: 5, fiber: 7, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Rice', gramWeight: 180, baseNGNCost: 400, protein: 6, carbs: 56, fat: 1, fiber: 2, sourcingLocation: 'Onitsha Main Market' },
-          { name: 'Ginger & Soy Sauce', gramWeight: 50, baseNGNCost: 200, protein: 3, carbs: 12, fat: 7, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-        ],
-        prepInstructions: [
-          'Rehydrate the soya chunks and squeeze dry.',
-          'Fry with sliced onion and pepper, then season with ginger and soy.',
-          'Serve over rice.',
-        ]
-      }
     ],
     beef_lean: [
       {

@@ -72,8 +72,10 @@ import { soundFX } from './utils/sound';
 // meal gets, so cached v3 plans still serve one protein per day. v4 swaps the
 // non-Nigerian dishes for real Nigerian ones and fixes the pool indexing, so
 // cached v4 plans keep serving sushi, couscous and shakshuka. v5 does the same
-// for Ghana, which was serving chicken katsu, suya and coleslaw.
-const MEAL_PLAN_VERSION = 6;
+// for Ghana, which was serving chicken katsu, suya and coleslaw. v6 fixed the
+// same class of error in Nigeria: soups were being handed over with an egg roll
+// instead of a swallow.
+const MEAL_PLAN_VERSION = 7;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',

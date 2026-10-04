@@ -635,10 +635,10 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Garden Egg Stew with Egg and Rice',
+        title: 'Garden Egg Soup with Boiled Egg and Garri',
         description:
-          'A thickened garden egg and tomato stew with sweet peppers, served over rice with a boiled egg.',
-        visualType: 'jollof_bowl',
+          'A thickened garden egg and tomato soup with sweet peppers, served with garri and a boiled egg.',
+        visualType: 'stew_swallow',
         style: 'indigenous',
         proteinSourceType: 'eggs_dairy',
         calories: 630,
@@ -647,10 +647,10 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 22,
         fiber: 9,
         cookTimeMinutes: 45,
-        readyToEatQuery: 'Garden Egg Stew with Egg and Rice',
+        readyToEatQuery: 'Garden Egg Soup with Egg and Garri',
         ingredients: [
-          { name: 'Garden Egg & Tomato Stew', gramWeight: 160, baseNGNCost: 400, protein: 5, carbs: 20, fat: 8, fiber: 6, sourcingLocation: 'Vegetable Stalls' },
-          { name: 'Cooked Rice', gramWeight: 190, baseNGNCost: 480, protein: 5, carbs: 42, fat: 1, fiber: 1, sourcingLocation: 'Grain Stall' },
+          { name: 'Garden Egg & Tomato Soup', gramWeight: 170, baseNGNCost: 400, protein: 5, carbs: 20, fat: 8, fiber: 6, sourcingLocation: 'Vegetable Stalls' },
+          { name: 'Garri (Cassava Granules)', gramWeight: 130, baseNGNCost: 220, protein: 2, carbs: 31, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' },
           { name: 'Boiled Farm Egg (1 Large)', gramWeight: 50, baseNGNCost: 220, protein: 6, carbs: 1, fat: 5, fiber: 0, sourcingLocation: 'Egg Depot' },
           { name: 'Palm Oil', gramWeight: 12, baseNGNCost: 140, protein: 0, carbs: 0, fat: 12, fiber: 0, sourcingLocation: 'Traditional Condiments' }
         ],
@@ -658,7 +658,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
           'Fry sliced tomato and sweet pepper in the palm oil.',
           'Add diced garden egg and simmer until thick and glossy.',
           'Season and adjust the salt.',
-          'Serve over rice with the boiled egg alongside.'
+          'Soak the garri in a little hot water and serve it beside the soup with the boiled egg.'
         ]
       },
       {
@@ -774,7 +774,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
     ],
     beef_lean: [
       {
-        title: 'Spicy Goat Head Soup with Utazi and Onion',
+        title: 'Spicy Goat Head Soup with Utazi and Pounded Yam',
         description:
           'Goat head simmered until tender in a thickened palm oil sauce with utazi and onion, served with raw onion.',
         visualType: 'stew_swallow',
@@ -791,7 +791,8 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
           { name: 'Goat Head Meat & Bone', gramWeight: 200, baseNGNCost: 2100, protein: 45, carbs: 0, fat: 11, fiber: 0, sourcingLocation: 'Butcher Shop' },
           { name: 'Red Palm Oil & Potash Paste', gramWeight: 25, baseNGNCost: 300, protein: 1, carbs: 1, fat: 20, fiber: 0, sourcingLocation: 'Traditional Condiments' },
           { name: 'Utazi & Grated Onion', gramWeight: 30, baseNGNCost: 200, protein: 2, carbs: 4, fat: 1, fiber: 2, sourcingLocation: 'Vegetable Stalls' },
-          { name: 'Calabash Nutmeg (Ehuru)', gramWeight: 5, baseNGNCost: 90, protein: 0, carbs: 1, fat: 0, fiber: 1, sourcingLocation: 'Traditional Condiments' }
+          { name: 'Calabash Nutmeg (Ehuru)', gramWeight: 5, baseNGNCost: 90, protein: 0, carbs: 1, fat: 0, fiber: 1, sourcingLocation: 'Traditional Condiments' },
+          { name: 'Pounded Yam', gramWeight: 200, baseNGNCost: 600, protein: 5, carbs: 46, fat: 0, fiber: 4, sourcingLocation: 'Grain Stall' }
         ],
         prepInstructions: [
           'Pressure-cook the goat head until the meat pulls from the bone.',
@@ -859,7 +860,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
   evenings: {
     fish: [
       {
-        title: 'Okra and Ogbono Soup with Fish',
+        title: 'Okra and Ogbono Soup with Fish and Eba',
         description:
           'Okra and ground ogbono seeds thicken a broth with dried fish and crayfish, giving the characteristic draw.',
         visualType: 'stew_swallow',
@@ -871,13 +872,14 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 18,
         fiber: 8,
         cookTimeMinutes: 60,
-        readyToEatQuery: 'Okra and Ogbono Soup with Fish',
+        readyToEatQuery: 'Okra and Ogbono Soup with Fish and Eba',
         ingredients: [
           { name: 'Dried Bonga / Catfish Bits', gramWeight: 60, baseNGNCost: 500, protein: 24, carbs: 0, fat: 4, fiber: 0, sourcingLocation: 'Fish Counter' },
           { name: 'Ground Ogbono Seed', gramWeight: 30, baseNGNCost: 320, protein: 5, carbs: 5, fat: 4, fiber: 4, sourcingLocation: 'Grain Stall' },
           { name: 'Fresh Okra', gramWeight: 120, baseNGNCost: 250, protein: 4, carbs: 12, fat: 1, fiber: 5, sourcingLocation: 'Vegetable Stalls' },
           { name: 'Pepper, Crayfish & Palm Oil', gramWeight: 30, baseNGNCost: 280, protein: 4, carbs: 3, fat: 12, fiber: 1, sourcingLocation: 'Traditional Condiments' },
-          { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' }
+          { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' },
+          { name: 'Eba (Cassava and Yam Swallow)', gramWeight: 170, baseNGNCost: 400, protein: 3, carbs: 41, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' }
         ],
         prepInstructions: [
           'Blend the ground ogbono with a little water.',
@@ -887,7 +889,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Palm Fruit Soup with Fish',
+        title: 'Palm Fruit Soup with Fish and Garri',
         description:
           'A rich red soup made from palm fruit pulp with fish, periwinkle and scent leaf, deeply savoury.',
         visualType: 'stew_swallow',
@@ -899,13 +901,14 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 24,
         fiber: 7,
         cookTimeMinutes: 90,
-        readyToEatQuery: 'Palm Fruit Soup with Fish',
+        readyToEatQuery: 'Palm Fruit Soup with Fish and Garri',
         ingredients: [
           { name: 'Fresh Fish Steak (Tilapia)', gramWeight: 170, baseNGNCost: 1300, protein: 34, carbs: 0, fat: 6, fiber: 0, sourcingLocation: 'Fish Counter' },
           { name: 'Palm Fruit Pulp', gramWeight: 120, baseNGNCost: 400, protein: 2, carbs: 6, fat: 12, fiber: 3, sourcingLocation: 'Traditional Condiments' },
           { name: 'Periwinkle & Crayfish', gramWeight: 60, baseNGNCost: 480, protein: 16, carbs: 1, fat: 2, fiber: 0, sourcingLocation: 'Fish Counter' },
           { name: 'Scent Leaf & Pepper', gramWeight: 20, baseNGNCost: 170, protein: 1, carbs: 3, fat: 1, fiber: 1, sourcingLocation: 'Vegetable Stalls' },
-          { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' }
+          { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' },
+          { name: 'Garri (Cassava Granules)', gramWeight: 130, baseNGNCost: 220, protein: 2, carbs: 31, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' }
         ],
         prepInstructions: [
           'Boil the palm fruit pulp to extract the juice, then strain and skim.',
@@ -1273,7 +1276,7 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         ]
       },
       {
-        title: 'Cow Skin Soup with Pepper',
+        title: 'Cow Skin Soup with Pepper and Semo',
         description:
           'Ponmo and cow skin simmered until gelatinous, in a spiced broth with utazi and onion.',
         visualType: 'stew_swallow',
@@ -1285,12 +1288,13 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
         fat: 26,
         fiber: 4,
         cookTimeMinutes: 120,
-        readyToEatQuery: 'Cow Skin Soup with Pepper',
+        readyToEatQuery: 'Cow Skin Soup with Pepper and Semo',
         ingredients: [
           { name: 'Cow Skin (Ponmo) & Beef', gramWeight: 200, baseNGNCost: 1100, protein: 40, carbs: 0, fat: 10, fiber: 0, sourcingLocation: 'Butcher Shop' },
           { name: 'Pepper, Utazi & Ginger Broth', gramWeight: 200, baseNGNCost: 350, protein: 5, carbs: 10, fat: 4, fiber: 2, sourcingLocation: 'Traditional Condiments' },
           { name: 'Eba (Cassava Swallow)', gramWeight: 110, baseNGNCost: 300, protein: 1, carbs: 28, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' },
-          { name: 'Sliced Onion & Palm Oil', gramWeight: 25, baseNGNCost: 240, protein: 1, carbs: 3, fat: 13, fiber: 1, sourcingLocation: 'Traditional Condiments' }
+          { name: 'Sliced Onion & Palm Oil', gramWeight: 25, baseNGNCost: 240, protein: 1, carbs: 3, fat: 13, fiber: 1, sourcingLocation: 'Traditional Condiments' },
+          { name: 'Semo (Yam Flour Swallow)', gramWeight: 160, baseNGNCost: 380, protein: 4, carbs: 38, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' }
         ],
         prepInstructions: [
           'Scrub and boil the cow skin until it is soft and gives up its gelatin.',
@@ -1573,6 +1577,156 @@ export const NIGERIA_AUTHENTIC_POOLS: Record<
           'Simmer the assorted meat with the stockfish until very tender.',
           'Add the leaf paste and palm oil, and cook until thick.',
           'Serve with pounded yam.'
+        ]
+      }
+    ]
+  }
+};
+
+/**
+ * Garden egg soup with real swallows.
+ *
+ * The earlier batch dressed soups up as stew-and-rice plates and, in one case,
+ * served garden egg soup with an egg roll. Egg roll is a party snack, and a
+ * thick soup is eaten with a swallow: garri, semo, eba, fufu, pounded yam,
+ * amala. Rice is not wrong for a stew, but pairing it with a soup this thick is
+ * how the food stops reading as Nigerian at all.
+ *
+ * These four cover the swallows the pools were missing outright. Garri and
+ * pounded yam were already there.
+ */
+export const NIGERIA_SWOWL_PAIRS: Record<
+  'breakfasts' | 'afternoons' | 'evenings',
+  Record<MealBlueprint['proteinSourceType'], MealBlueprint[]>
+> = {
+  breakfasts: {
+    fish: [],
+    poultry: [],
+    eggs_dairy: [],
+    legumes_plant: [
+      {
+        title: 'Garden Egg Soup with Pepper and Amala',
+        description:
+          'Garden egg soup spooned onto a smooth amala, the cassava and yam swallow rolled with pepper sauce.',
+        visualType: 'stew_swallow',
+        style: 'indigenous',
+        proteinSourceType: 'legumes_plant',
+        calories: 545,
+        protein: 9,
+        carbs: 78,
+        fat: 22,
+        fiber: 11,
+        cookTimeMinutes: 45,
+        readyToEatQuery: 'Garden Egg Soup with Amala',
+        ingredients: [
+          { name: 'Garden Egg & Tomato Soup', gramWeight: 170, baseNGNCost: 400, protein: 6, carbs: 21, fat: 9, fiber: 7, sourcingLocation: 'Vegetable Stalls' },
+          { name: 'Amala (Cassava and Yam Swallow)', gramWeight: 190, baseNGNCost: 430, protein: 3, carbs: 46, fat: 0, fiber: 3, sourcingLocation: 'Grain Stall' },
+          { name: 'Pepper Sauce', gramWeight: 20, baseNGNCost: 180, protein: 1, carbs: 3, fat: 2, fiber: 1, sourcingLocation: 'Spice Stall' },
+          { name: 'Palm Oil', gramWeight: 12, baseNGNCost: 140, protein: 0, carbs: 0, fat: 12, fiber: 0, sourcingLocation: 'Traditional Condiments' }
+        ],
+        prepInstructions: [
+          'Blend tomato, sweet pepper and garden egg, then simmer in palm oil until thick.',
+          'Season the soup well.',
+          'Roll the amala with hot water until smooth and pliable.',
+          'Spoon the soup onto the amala and finish with pepper sauce.'
+        ]
+      }
+    ],
+    beef_lean: []
+  },
+  afternoons: {
+    fish: [
+      {
+        title: 'Garden Egg Soup with Grilled Fish and Semo',
+        description:
+          'A thick garden egg and tomato soup served with grilled fish and semo, the smooth yam flour swallow.',
+        visualType: 'stew_swallow',
+        style: 'indigenous',
+        proteinSourceType: 'fish',
+        calories: 585,
+        protein: 34,
+        carbs: 62,
+        fat: 20,
+        fiber: 8,
+        cookTimeMinutes: 50,
+        readyToEatQuery: 'Garden Egg Soup with Grilled Fish and Semo',
+        ingredients: [
+          { name: 'Garden Egg & Tomato Soup', gramWeight: 180, baseNGNCost: 420, protein: 6, carbs: 22, fat: 9, fiber: 7, sourcingLocation: 'Vegetable Stalls' },
+          { name: 'Grilled Tilapia Fillet', gramWeight: 140, baseNGNCost: 1250, protein: 27, carbs: 0, fat: 6, fiber: 0, sourcingLocation: 'Fish Counter' },
+          { name: 'Semo (Yam Flour Swallow)', gramWeight: 160, baseNGNCost: 380, protein: 4, carbs: 38, fat: 0, fiber: 1, sourcingLocation: 'Grain Stall' },
+          { name: 'Palm Oil', gramWeight: 10, baseNGNCost: 120, protein: 0, carbs: 0, fat: 10, fiber: 0, sourcingLocation: 'Traditional Condiments' }
+        ],
+        prepInstructions: [
+          'Fry blended tomato and sweet pepper in the palm oil.',
+          'Add diced garden egg and simmer until the soup thickens.',
+          'Season, then knead the semo with hot water into a smooth dough.',
+          'Serve the soup over the semo with the grilled fish on the side.'
+        ]
+      }
+    ],
+    poultry: [],
+    eggs_dairy: [],
+    legumes_plant: [],
+    beef_lean: []
+  },
+  evenings: {
+    fish: [],
+    poultry: [
+      {
+        title: 'Garden Egg Soup with Chicken and Eba',
+        description:
+          'Garden egg soup thickened with palm oil and pepper, served with chicken and a ball of eba.',
+        visualType: 'stew_swallow',
+        style: 'indigenous',
+        proteinSourceType: 'poultry',
+        calories: 640,
+        protein: 33,
+        carbs: 60,
+        fat: 27,
+        fiber: 7,
+        cookTimeMinutes: 55,
+        readyToEatQuery: 'Garden Egg Soup with Chicken and Eba',
+        ingredients: [
+          { name: 'Garden Egg & Tomato Soup', gramWeight: 180, baseNGNCost: 420, protein: 6, carbs: 22, fat: 9, fiber: 7, sourcingLocation: 'Vegetable Stalls' },
+          { name: 'Stewed Chicken', gramWeight: 130, baseNGNCost: 1450, protein: 27, carbs: 0, fat: 12, fiber: 0, sourcingLocation: 'Poultry Counter' },
+          { name: 'Eba (Cassava and Yam Swallow)', gramWeight: 170, baseNGNCost: 400, protein: 3, carbs: 41, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' },
+          { name: 'Palm Oil', gramWeight: 12, baseNGNCost: 140, protein: 0, carbs: 0, fat: 12, fiber: 0, sourcingLocation: 'Traditional Condiments' }
+        ],
+        prepInstructions: [
+          'Blend tomato, sweet pepper and garden egg, then simmer in palm oil until thick.',
+          'Season the soup and keep it warm.',
+          'Knead the eba dough in hot water until smooth and mould it into balls.',
+          'Serve the soup with the eba and the stewed chicken.'
+        ]
+      }
+    ],
+    eggs_dairy: [],
+    legumes_plant: [],
+    beef_lean: [
+      {
+        title: 'Garden Egg Soup with Goat and Fufu',
+        description: 'A rich garden egg and palm oil soup served with goat and pounded fufu.',
+        visualType: 'stew_swallow',
+        style: 'indigenous',
+        proteinSourceType: 'beef_lean',
+        calories: 720,
+        protein: 35,
+        carbs: 58,
+        fat: 38,
+        fiber: 8,
+        cookTimeMinutes: 85,
+        readyToEatQuery: 'Garden Egg Soup with Goat and Fufu',
+        ingredients: [
+          { name: 'Garden Egg & Tomato Soup', gramWeight: 190, baseNGNCost: 430, protein: 6, carbs: 23, fat: 10, fiber: 7, sourcingLocation: 'Vegetable Stalls' },
+          { name: 'Goat Meat Pepper Soup', gramWeight: 130, baseNGNCost: 1900, protein: 30, carbs: 3, fat: 15, fiber: 0, sourcingLocation: 'Mushroom Market' },
+          { name: 'Cassava and Plantain Fufu', gramWeight: 180, baseNGNCost: 520, protein: 5, carbs: 42, fat: 0, fiber: 2, sourcingLocation: 'Grain Stall' },
+          { name: 'Palm Oil', gramWeight: 15, baseNGNCost: 170, protein: 0, carbs: 0, fat: 15, fiber: 0, sourcingLocation: 'Traditional Condiments' }
+        ],
+        prepInstructions: [
+          'Blend tomato, sweet pepper and garden egg, then simmer in palm oil until the soup is thick and glossy.',
+          'Season generously and keep it warm.',
+          'Pound the boiled cassava and plantain until smooth and elastic.',
+          'Serve the soup over the fufu with the goat on the side.'
         ]
       }
     ]

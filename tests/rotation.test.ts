@@ -437,3 +437,34 @@ test('a plan never serves one dish under two different titles', () => {
     }
   }
 });
+
+test('a Nigerian soup is served with a swallow, never a snack', () => {
+  // Caught by the product owner: the plan offered "Egg Roll with Garden Egg
+  // Stew". Egg roll is a party snack, and garden egg soup is eaten with a
+  // swallow. A soup dressed up as a stew-and-snack plate stops reading as
+  // Nigerian food at all.
+  const snacks = /\b(egg roll|spring roll|puff-?puff|chin chin|cake|biscuit|samosa|roll)\b/i;
+  const soupWords = /\b(soup|stew)\b/i;
+  const swallow =
+    /garri|semo|eba|fufu|pounded yam|pounded plantain|amala|swallow|tuwo|\bpusu\b|\bpounded\b/i;
+
+  // Indigenous only. The balanced plan mixes in the continental pool, which
+  // exists to serve food from elsewhere, so a couscous bowl there is not a
+  // defect.
+  for (const preference of ['indigenous'] as const) {
+    for (const meal of generate28DayPlan('NG', preference)) {
+      assert.ok(
+        !snacks.test(meal.title),
+        `"${meal.title}" serves a snack as the main starch`
+      );
+      // A dish that calls itself a soup should reach the eater with something
+      // to scoop it with, unless it is a rice or yam plate.
+      if (soupWords.test(meal.title) && !/\brice\b|\byam\b|\bplantain\b/i.test(meal.title)) {
+        assert.ok(
+          swallow.test(meal.title) || swallow.test(meal.description),
+          `"${meal.title}" is a soup but names no swallow to eat it with`
+        );
+      }
+    }
+  }
+});

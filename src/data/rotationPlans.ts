@@ -2,7 +2,7 @@ import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
 import { COUNTRIES } from './countries';
 import { COUNTRY_CUISINES, dishKey, resolveCuisineSources } from './cuisineCatalog';
 import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
-import { NIGERIA_AUTHENTIC_POOLS } from './nigeriaAuthenticPools';
+import { NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS } from './nigeriaAuthenticPools';
 import { CONTINENTAL_POOL_EXTRAS } from './continentalPoolsExtra';
 
 type ProteinKey = MealBlueprint['proteinSourceType'];
@@ -848,7 +848,7 @@ function mergeNigeriaPoolExtras(): void {
     ['afternoons', INDIGENOUS_AFTERNOONS],
     ['evenings', INDIGENOUS_EVENING]
   ];
-  for (const source of [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS]) {
+  for (const source of [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS]) {
     for (const [slot, pool] of targets) {
       for (const [protein, dishes] of Object.entries(source[slot])) {
         const bucket = pool[protein as ProteinKey];
