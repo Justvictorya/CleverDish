@@ -65,31 +65,6 @@ export const COUNTRY_BREAKFAST_EXTRAS: Record<string, Record<ProteinKey, MealBlu
     ],
     poultry: [
       {
-        title: 'Chicken Katsu Rice Bowl with Fried Egg',
-        description: 'Crisp crumbed chicken over jollof rice with a fried egg and pickles.',
-        visualType: 'jollof_bowl',
-        style: 'indigenous',
-        proteinSourceType: 'poultry',
-        calories: 640,
-        protein: 44,
-        carbs: 66,
-        fat: 22,
-        fiber: 6,
-        cookTimeMinutes: 35,
-        readyToEatQuery: 'Chicken Katsu Rice Bowl',
-        ingredients: [
-          { name: 'Chicken Breast', gramWeight: 180, baseNGNCost: 1300, protein: 40, carbs: 0, fat: 5, fiber: 0, sourcingLocation: 'Makola Poultry Stalls' },
-          { name: 'Jollof Rice', gramWeight: 200, baseNGNCost: 450, protein: 8, carbs: 62, fat: 4, fiber: 3, sourcingLocation: 'Makola Rice Millers' },
-          { name: 'Breadcrumb Crust', gramWeight: 60, baseNGNCost: 180, protein: 3, carbs: 14, fat: 5, fiber: 1, sourcingLocation: 'Makola Bakeries' },
-          { name: 'Egg & Pickles', gramWeight: 110, baseNGNCost: 420, protein: 11, carbs: 6, fat: 22, fiber: 1, sourcingLocation: 'Makola Egg Vendors' },
-        ],
-        prepInstructions: [
-          'Coat the seasoned chicken in breadcrumbs and shallow-fry until golden.',
-          'Serve over jollof rice.',
-          'Top with a fried egg and pickles.',
-        ]
-      },
-      {
         title: 'Waakye with Grilled Chicken & Boiled Egg',
         description: 'Waakye rice and beans topped with grilled chicken and a boiled egg.',
         visualType: 'jollof_bowl',
@@ -141,31 +116,6 @@ export const COUNTRY_BREAKFAST_EXTRAS: Record<string, Record<ProteinKey, MealBlu
           'Serve together.',
         ]
       },
-      {
-        title: 'Tomato Scramble with Bread & Grated Cheese',
-        description: 'Eggs softly scrambled with tomato and onion, served with bread and grated cheese.',
-        visualType: 'yam_egg_skillet',
-        style: 'indigenous',
-        proteinSourceType: 'eggs_dairy',
-        calories: 530,
-        protein: 26,
-        carbs: 42,
-        fat: 24,
-        fiber: 6,
-        cookTimeMinutes: 20,
-        readyToEatQuery: 'Tomato Scramble with Cheese',
-        ingredients: [
-          { name: 'Eggs', gramWeight: 160, baseNGNCost: 600, protein: 17, carbs: 1, fat: 12, fiber: 0, sourcingLocation: 'Makola Egg Vendors' },
-          { name: 'Tomato & Onion', gramWeight: 180, baseNGNCost: 240, protein: 4, carbs: 20, fat: 5, fiber: 6, sourcingLocation: 'Makola Vegetable Stall' },
-          { name: 'Bread Slice', gramWeight: 90, baseNGNCost: 180, protein: 6, carbs: 34, fat: 2, fiber: 3, sourcingLocation: 'Makola Bakeries' },
-          { name: 'Grated Cheese', gramWeight: 40, baseNGNCost: 240, protein: 5, carbs: 1, fat: 18, fiber: 0, sourcingLocation: 'Makola Dairy Stalls' },
-        ],
-        prepInstructions: [
-          'Soften the tomato and onion in oil, then add the whisked eggs and scramble softly.',
-          'Toast the bread.',
-          'Serve with grated cheese.',
-        ]
-      }
     ],
     legumes_plant: [
       {
@@ -193,83 +143,8 @@ export const COUNTRY_BREAKFAST_EXTRAS: Record<string, Record<ProteinKey, MealBlu
           'Top with a fried egg.',
         ]
       },
-      {
-        title: 'Akara with Rice & Tomato Stew',
-        description: 'Crisp black-eyed bean fritters with rice and a peppery tomato stew.',
-        visualType: 'beans_plantain',
-        style: 'indigenous',
-        proteinSourceType: 'legumes_plant',
-        calories: 540,
-        protein: 19,
-        carbs: 68,
-        fat: 15,
-        fiber: 13,
-        cookTimeMinutes: 35,
-        readyToEatQuery: 'Akara with Rice and Tomato Stew',
-        ingredients: [
-          { name: 'Akara (Bean Fritters)', gramWeight: 160, baseNGNCost: 450, protein: 10, carbs: 28, fat: 11, fiber: 7, sourcingLocation: 'Makola Bean Vendors' },
-          { name: 'Rice', gramWeight: 170, baseNGNCost: 380, protein: 6, carbs: 52, fat: 1, fiber: 2, sourcingLocation: 'Makola Rice Millers' },
-          { name: 'Tomato Stew', gramWeight: 200, baseNGNCost: 260, protein: 5, carbs: 22, fat: 7, fiber: 5, sourcingLocation: 'Makola Vegetable Stall' },
-          { name: 'Shito Pepper Blend', gramWeight: 8, baseNGNCost: 120, protein: 1, carbs: 3, fat: 4, fiber: 1, sourcingLocation: 'Makola Spice Stall' },
-        ],
-        prepInstructions: [
-          'Fry spoonfuls of akara batter until golden.',
-          'Simmer the tomato stew with pepper.',
-          'Serve with rice and shito.',
-        ]
-      }
     ],
     beef_lean: [
-      {
-        title: 'Beef & Tomato Sandwich with Chilli',
-        description: 'Sliced beef in a crusty roll with tomato, onion and hot chilli.',
-        visualType: 'chicken_salad',
-        style: 'indigenous',
-        proteinSourceType: 'beef_lean',
-        calories: 600,
-        protein: 38,
-        carbs: 52,
-        fat: 24,
-        fiber: 7,
-        cookTimeMinutes: 25,
-        readyToEatQuery: 'Beef and Tomato Sandwich',
-        ingredients: [
-          { name: 'Beef Sirloin', gramWeight: 150, baseNGNCost: 1800, protein: 34, carbs: 0, fat: 9, fiber: 0, sourcingLocation: 'Makola Butchers' },
-          { name: 'Crusty Roll', gramWeight: 100, baseNGNCost: 210, protein: 7, carbs: 42, fat: 2, fiber: 3, sourcingLocation: 'Makola Bakeries' },
-          { name: 'Tomato & Onion', gramWeight: 120, baseNGNCost: 170, protein: 2, carbs: 13, fat: 2, fiber: 4, sourcingLocation: 'Makola Vegetable Stall' },
-          { name: 'Chilli & Lettuce', gramWeight: 60, baseNGNCost: 110, protein: 1, carbs: 5, fat: 3, fiber: 1, sourcingLocation: 'Makola Vegetable Stall' },
-        ],
-        prepInstructions: [
-          'Slice the cooked beef thinly.',
-          'Toast the roll and fill with beef, tomato, onion and chilli.',
-          'Serve immediately.',
-        ]
-      },
-      {
-        title: 'Suya Beef Rolls with Waakye',
-        description: 'Charcoal-grilled suya-spiced beef rolled with onion and served over waakye.',
-        visualType: 'jollof_bowl',
-        style: 'indigenous',
-        proteinSourceType: 'beef_lean',
-        calories: 640,
-        protein: 42,
-        carbs: 64,
-        fat: 24,
-        fiber: 8,
-        cookTimeMinutes: 30,
-        readyToEatQuery: 'Suya Beef Rolls with Waakye',
-        ingredients: [
-          { name: 'Beef Strips', gramWeight: 170, baseNGNCost: 1900, protein: 38, carbs: 0, fat: 10, fiber: 0, sourcingLocation: 'Makola Butchers' },
-          { name: 'Waakye (Rice & Cowpea)', gramWeight: 200, baseNGNCost: 540, protein: 9, carbs: 60, fat: 3, fiber: 6, sourcingLocation: 'Makola Rice Millers' },
-          { name: 'Suya Spice Blend', gramWeight: 12, baseNGNCost: 120, protein: 2, carbs: 4, fat: 4, fiber: 2, sourcingLocation: 'Makola Spice Stall' },
-          { name: 'Raw Onion', gramWeight: 80, baseNGNCost: 90, protein: 2, carbs: 10, fat: 0, fiber: 2, sourcingLocation: 'Makola Vegetable Stall' },
-        ],
-        prepInstructions: [
-          'Marinate the beef with suya spice and grill over charcoal.',
-          'Slice the raw onion into thin rings.',
-          'Roll the beef with onion and serve over waakye.',
-        ]
-      }
     ]
   },
   KE: {

@@ -1,6 +1,6 @@
 import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
 import { COUNTRIES } from './countries';
-import { COUNTRY_CUISINES, resolveCuisineSources } from './cuisineCatalog';
+import { COUNTRY_CUISINES, dishKey, resolveCuisineSources } from './cuisineCatalog';
 import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
 import { NIGERIA_AUTHENTIC_POOLS } from './nigeriaAuthenticPools';
 import { CONTINENTAL_POOL_EXTRAS } from './continentalPoolsExtra';
@@ -854,7 +854,7 @@ function mergeNigeriaPoolExtras(): void {
         const bucket = pool[protein as ProteinKey];
         if (!bucket) continue;
         for (const dish of dishes) {
-          if (!bucket.some((existing) => existing.title === dish.title)) {
+          if (!bucket.some((existing) => dishKey(existing.title) === dishKey(dish.title))) {
             bucket.push(dish);
           }
         }
@@ -877,7 +877,7 @@ function mergeContinentalPoolExtras(): void {
       const bucket = pool[protein as ProteinKey];
       if (!bucket) continue;
       for (const dish of dishes) {
-        if (!bucket.some((existing) => existing.title === dish.title)) {
+        if (!bucket.some((existing) => dishKey(existing.title) === dishKey(dish.title))) {
           bucket.push(dish);
         }
       }

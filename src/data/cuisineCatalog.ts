@@ -1,6 +1,7 @@
 import { CountryCode, MealBlueprint } from '../types';
 import { EXTRA_MAINS } from './cuisineMainsExtra';
 import { COUNTRY_BREAKFAST_EXTRAS } from './breakfastsExtra';
+import { GHANA_AUTHENTIC_POOLS } from './ghanaAuthenticPools';
 
 /**
  * Country-specific local cuisines.
@@ -34,7 +35,7 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
   // ─────────────────────────── GHANA ───────────────────────────
   GH: {
     markets: ['Makola Market, Accra', 'Kejetia Market, Kumasi', 'Kaneshie Market, Accra'],
-    staples: ['Waakye', 'Banku', 'Fufu', 'Jollof', 'Tomto stew', 'Shito'],
+    staples: ['Waakye', 'Banku', 'Fufu', 'Jollof', 'Tomato stew', 'Shito'],
     priceIndex: 1,
     breakfasts: {
       fish: [
@@ -64,109 +65,12 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
         }
       ],
       poultry: [
-        {
-          title: 'Chicken Bread & Soft-Boiled Egg',
-          description: 'Soft white sandwich bread filled with spiced shredded chicken and a jammy centre-soft egg.',
-          visualType: 'chicken_salad',
-          style: 'indigenous',
-          proteinSourceType: 'poultry',
-          calories: 470,
-          protein: 32,
-          carbs: 46,
-          fat: 15,
-          fiber: 4,
-          cookTimeMinutes: 15,
-          readyToEatQuery: 'Chicken Bread Roll',
-          ingredients: [
-            { name: 'Chicken Breast', gramWeight: 130, baseNGNCost: 1000, protein: 28, carbs: 0, fat: 3, fiber: 0, sourcingLocation: 'Makola Poultry Section' },
-            { name: 'Soft Bread Roll', gramWeight: 90, baseNGNCost: 300, protein: 8, carbs: 44, fat: 3, fiber: 3, sourcingLocation: 'Kejetia Bakeries' },
-            { name: 'Soft-Boiled Eggs', gramWeight: 70, baseNGNCost: 400, protein: 10, carbs: 1, fat: 7, fiber: 0, sourcingLocation: 'Egg Wholesale Depot' },
-            { name: 'Tomato, Onion & Chili Relish', gramWeight: 60, baseNGNCost: 220, protein: 1, carbs: 6, fat: 0.4, fiber: 2, sourcingLocation: 'Perishable Produce Corner' }
-          ],
-          prepInstructions: [
-            'Shred the seasoned, grilled chicken breast.',
-            'Layer the chicken and relish in the bread roll.',
-            'Nestle in the halved soft-boiled egg just before serving.'
-          ]
-        }
       ],
       eggs_dairy: [
-        {
-          title: 'Savory Rice Cakes with Fried Egg',
-          description: 'Northern Ghanaian spongy rice cakes steamed to a light fluff, served with stew and a fried egg.',
-          visualType: 'yam_egg_skillet',
-          style: 'indigenous',
-          proteinSourceType: 'eggs_dairy',
-          calories: 540,
-          protein: 22,
-          carbs: 78,
-          fat: 14,
-          fiber: 5,
-          cookTimeMinutes: 25,
-          readyToEatQuery: 'Rice Cakes with Fried Egg',
-          ingredients: [
-            { name: 'Crisp Rice Cakes', gramWeight: 220, baseNGNCost: 450, protein: 6, carbs: 78, fat: 1, fiber: 2, sourcingLocation: 'Makola Market (Kuli Stalls)' },
-            { name: 'Tomto Stew', gramWeight: 120, baseNGNCost: 400, protein: 4, carbs: 12, fat: 6, fiber: 3, sourcingLocation: 'Local Tomato Sellers' },
-            { name: 'Fried Eggs', gramWeight: 70, baseNGNCost: 400, protein: 10, carbs: 1, fat: 7, fiber: 0, sourcingLocation: 'Egg Wholesale Depot' }
-          ],
-          prepInstructions: [
-            'Steep the rice flour batter until aerated, then steam in greased tins until spongy and set.',
-            'Warm the tomto stew until glossy.',
-            'Fry the eggs in red palm oil and plate alongside the kuli.'
-          ]
-        }
       ],
       legumes_plant: [
-        {
-          title: 'Tomto Stew with Boiled Rice & Avocado',
-          description: 'A light, peppery Ghanaian tomato stew served over boiled rice with creamy sliced avocado.',
-          visualType: 'beans_plantain',
-          style: 'indigenous',
-          proteinSourceType: 'legumes_plant',
-          calories: 500,
-          protein: 16,
-          carbs: 82,
-          fat: 10,
-          fiber: 12,
-          cookTimeMinutes: 25,
-          readyToEatQuery: 'Tomto Stew with Rice',
-          ingredients: [
-            { name: 'Boiled Local Rice', gramWeight: 240, baseNGNCost: 550, protein: 6, carbs: 74, fat: 0.5, fiber: 2, sourcingLocation: 'Makola Market (Rice Mills)' },
-            { name: 'Tomto Stew (Tomato, Pepper, Onion)', gramWeight: 180, baseNGNCost: 500, protein: 4, carbs: 14, fat: 5, fiber: 4, sourcingLocation: 'Perishable Produce Corner' },
-            { name: 'Ripe Avocado', gramWeight: 80, baseNGNCost: 450, protein: 2, carbs: 4, fat: 8, fiber: 5, sourcingLocation: 'Fruit Sellers Row' }
-          ],
-          prepInstructions: [
-            'Blanch and peel the tomatoes, then simmer with peppers and onion until the sauce thickens.',
-            'Cook the rice until tender and drain.',
-            'Spoon the stew over the rice and fan avocado slices on top.'
-          ]
-        }
       ],
       beef_lean: [
-        {
-          title: 'Beef Sandwich with Tomato & Onion',
-          description: 'Thinly sliced seared beef in a crusty roll with juicy tomato-onion salad.',
-          visualType: 'chicken_salad',
-          style: 'indigenous',
-          proteinSourceType: 'beef_lean',
-          calories: 520,
-          protein: 38,
-          carbs: 44,
-          fat: 17,
-          fiber: 4,
-          cookTimeMinutes: 15,
-          readyToEatQuery: 'Beef Sandwich',
-          ingredients: [
-            { name: 'Lean Beef Sirloin Strips', gramWeight: 140, baseNGNCost: 1600, protein: 34, carbs: 0, fat: 7, fiber: 0, sourcingLocation: 'Cold Room Meat Stall' },
-            { name: 'Crusty Bread Roll', gramWeight: 90, baseNGNCost: 300, protein: 8, carbs: 44, fat: 3, fiber: 3, sourcingLocation: 'Kejetia Bakeries' },
-            { name: 'Tomato & Onion Salad', gramWeight: 80, baseNGNCost: 220, protein: 1, carbs: 6, fat: 0.4, fiber: 2, sourcingLocation: 'Perishable Produce Corner' }
-          ],
-          prepInstructions: [
-            'Sear the beef strips hot and fast, then rest before slicing.',
-            'Pile the beef into the toasted roll.',
-            'Finish with tomato-onion salad and a pinch of salt.'
-          ]
-        }
       ]
     },
     mains: {
@@ -197,57 +101,8 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
         }
       ],
       poultry: [
-        {
-          title: 'Waakye with Grilled Chicken & Coleslaw',
-          description: 'Smoky waakye rice and beans topped with charcoal-grilled chicken, slaw and ripe avocado.',
-          visualType: 'jollof_bowl',
-          style: 'indigenous',
-          proteinSourceType: 'poultry',
-          calories: 680,
-          protein: 46,
-          carbs: 78,
-          fat: 20,
-          fiber: 11,
-          cookTimeMinutes: 40,
-          readyToEatQuery: 'Waakye and Grilled Chicken',
-          ingredients: [
-            { name: 'Waakye Rice & Cowpea', gramWeight: 280, baseNGNCost: 700, protein: 10, carbs: 78, fat: 1.5, fiber: 7, sourcingLocation: 'Makola Market (Grain Sack Row)' },
-            { name: 'Grilled Chicken Quarter', gramWeight: 160, baseNGNCost: 1250, protein: 36, carbs: 0, fat: 8, fiber: 0, sourcingLocation: 'Makola Poultry Section' },
-            { name: 'Cabbage Slaw & Avocado', gramWeight: 120, baseNGNCost: 400, protein: 3, carbs: 12, fat: 7, fiber: 5, sourcingLocation: 'Perishable Produce Corner' },
-            { name: 'Shito Pepper Sauce', gramWeight: 15, baseNGNCost: 180, protein: 1, carbs: 3, fat: 2, fiber: 1, sourcingLocation: 'Local Spice Stalls' }
-          ],
-          prepInstructions: [
-            'Cook the rice and cowpeas together until smoky and tender.',
-            'Grill the chicken until charred outside and juicy within.',
-            'Plate the waakye, top with chicken, slaw, avocado and shito sauce.'
-          ]
-        }
       ],
       eggs_dairy: [
-        {
-          title: 'Jollof with Grilled Cheese & Fried Egg',
-          description: 'Party jollof rice cooked in smoky tomato-pepper gravy, crowned with molten cheese and a crisp fried egg.',
-          visualType: 'jollof_bowl',
-          style: 'indigenous',
-          proteinSourceType: 'eggs_dairy',
-          calories: 690,
-          protein: 32,
-          carbs: 82,
-          fat: 26,
-          fiber: 6,
-          cookTimeMinutes: 40,
-          readyToEatQuery: 'Jollof with Fried Egg',
-          ingredients: [
-            { name: 'Jollof Rice in Tomato Gravy', gramWeight: 300, baseNGNCost: 800, protein: 8, carbs: 84, fat: 8, fiber: 5, sourcingLocation: 'Local Rice Milling' },
-            { name: 'Cheddar Cheese', gramWeight: 45, baseNGNCost: 600, protein: 12, carbs: 1, fat: 14, fiber: 0, sourcingLocation: 'Cold Room Dairy Shelf' },
-            { name: 'Fried Egg', gramWeight: 70, baseNGNCost: 400, protein: 10, carbs: 1, fat: 7, fiber: 0, sourcingLocation: 'Egg Wholesale Depot' }
-          ],
-          prepInstructions: [
-            'Fry the rice in oil with blended tomato and peppers, then simmer until the grains absorb the smoky gravy.',
-            'Melt the cheese over the top of the hot jollof.',
-            'Finish with a crisp fried egg and sliced garden egg.'
-          ]
-        }
       ],
       legumes_plant: [
         {
@@ -276,31 +131,6 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
         }
       ],
       beef_lean: [
-        {
-          title: 'Beef Stew with Rice & Coleslaw',
-          description: 'Slow-cooked lean beef in a tomato-onion gravy, served with steamed rice and fresh cabbage slaw.',
-          visualType: 'stew_swallow',
-          style: 'indigenous',
-          proteinSourceType: 'beef_lean',
-          calories: 660,
-          protein: 44,
-          carbs: 72,
-          fat: 18,
-          fiber: 9,
-          cookTimeMinutes: 60,
-          readyToEatQuery: 'Beef Stew with Rice',
-          ingredients: [
-            { name: 'Lean Beef Chuck Cubes', gramWeight: 160, baseNGNCost: 1800, protein: 42, carbs: 0, fat: 8, fiber: 0, sourcingLocation: 'Cold Room Meat Stall' },
-            { name: 'Tomato-Onion Gravy', gramWeight: 150, baseNGNCost: 400, protein: 4, carbs: 14, fat: 6, fiber: 3, sourcingLocation: 'Perishable Produce Corner' },
-            { name: 'Steamed Rice', gramWeight: 220, baseNGNCost: 550, protein: 6, carbs: 68, fat: 0.5, fiber: 2, sourcingLocation: 'Makola Market (Rice Mills)' },
-            { name: 'Cabbage Slaw', gramWeight: 100, baseNGNCost: 300, protein: 2, carbs: 10, fat: 2, fiber: 4, sourcingLocation: 'Perishable Produce Corner' }
-          ],
-          prepInstructions: [
-            'Brown the beef cubes, then simmer slowly with tomato, onion and bay leaf until the meat is fall-apart tender.',
-            'Season the gravy and check the liquid has reduced to a coating consistency.',
-            'Serve over steamed rice with crisp slaw alongside.'
-          ]
-        }
       ]
     }
   },
@@ -1420,6 +1250,18 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
 };
 
 /**
+ * Identity of a dish for deduplication purposes.
+ *
+ * The pools were written at different times and mix "&" and "and", so an exact
+ * title match treated "Kontomire Stew with Omelette & Rice" and "Kontomire
+ * Stew with Omelette and Rice" as two dishes. Both then served in the same
+ * plan under different wording. Fold case, the ampersand and punctuation.
+ */
+export function dishKey(title: string): string {
+  return title.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
  * Merge the extra mains into each country catalogue.
  *
  * Every local pool shipped with a single dish per protein, which meant the
@@ -1435,7 +1277,7 @@ function mergeExtraMains(): void {
       const pool = cuisine.mains[protein as P];
       if (!pool) continue;
       for (const dish of dishes) {
-        if (!pool.some((existing) => existing.title === dish.title)) {
+        if (!pool.some((existing) => dishKey(existing.title) === dishKey(dish.title))) {
           pool.push(dish);
         }
       }
@@ -1447,7 +1289,7 @@ function mergeExtraMains(): void {
         const pool = cuisine.breakfasts[protein as P];
         if (!pool) continue;
         for (const dish of dishes) {
-          if (!pool.some((existing) => existing.title === dish.title)) {
+          if (!pool.some((existing) => dishKey(existing.title) === dishKey(dish.title))) {
             pool.push(dish);
           }
         }
@@ -1457,6 +1299,38 @@ function mergeExtraMains(): void {
 }
 
 mergeExtraMains();
+
+/**
+ * Ghana needed its own replacement layer, because the extras above had been
+ * written from memory rather than sourced: they had chicken katsu, coleslaw,
+ * grilled cheese, avocado, beef sandwiches, a dish called "Tomto stew", akara
+ * (Nigerian — Ghana's bean fritter is koose, made from peeled cowpeas) and suya
+ * beef rolls (suya is Nigerian). Those are gone, and this adds the soups,
+ * stews and staples that were missing: kontomire, palm nut, groundnut, light,
+ * okro, bra leaf and jute mallow soups, red-red, tubaani, kenkey, fufu, banku,
+ * gari, kelewele, and goat, lamb and cow skin alongside the fish and poultry.
+ */
+function mergeGhanaAuthenticPools(): void {
+  const cuisine = COUNTRY_CUISINES.GH;
+  if (!cuisine) return;
+  const targets: Array<[keyof typeof GHANA_AUTHENTIC_POOLS, Record<P, MealBlueprint[]>]> = [
+    ['breakfasts', cuisine.breakfasts],
+    ['mains', cuisine.mains]
+  ];
+  for (const [slot, pool] of targets) {
+    for (const [protein, dishes] of Object.entries(GHANA_AUTHENTIC_POOLS[slot])) {
+      const bucket = pool[protein as P];
+      if (!bucket) continue;
+      for (const dish of dishes) {
+        if (!bucket.some((existing) => dishKey(existing.title) === dishKey(dish.title))) {
+          bucket.push(dish);
+        }
+      }
+    }
+  }
+}
+
+mergeGhanaAuthenticPools();
 
 /**
  * Resolve which pools feed the generator for a given country + preference.
@@ -1499,7 +1373,7 @@ export const LOCAL_STAPLE_COPY: Record<CountryCode, { label: string; staples: st
   },
   GH: {
     label: 'Ghanaian Market Staples',
-    staples: ['Waakye', 'Banku', 'Fufu', 'Jollof', 'Tomto stew', 'Shito']
+    staples: ['Waakye', 'Banku', 'Fufu', 'Jollof', 'Tomato stew', 'Shito']
   },
   KE: {
     label: 'Kenyan Market Staples',

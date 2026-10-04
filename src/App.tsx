@@ -71,8 +71,9 @@ import { soundFX } from './utils/sound';
 // have reached them. v3 fixed the catalogue size; v4 changes which protein each
 // meal gets, so cached v3 plans still serve one protein per day. v4 swaps the
 // non-Nigerian dishes for real Nigerian ones and fixes the pool indexing, so
-// cached v4 plans keep serving sushi, couscous and shakshuka.
-const MEAL_PLAN_VERSION = 5;
+// cached v4 plans keep serving sushi, couscous and shakshuka. v5 does the same
+// for Ghana, which was serving chicken katsu, suya and coleslaw.
+const MEAL_PLAN_VERSION = 6;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',

@@ -91,31 +91,6 @@ export const EXTRA_MAINS: Record<string, Record<ProteinKey, MealBlueprint[]>> = 
           'Grill one chicken piece until charred and serve with the soup and banku.',
         ]
       },
-      {
-        title: 'Chicken Katsu with Jollof Rice & Coleslaw',
-        description: 'Crisp crumbed chicken cutlet over jollof rice, with a cooling cabbage slaw.',
-        visualType: 'jollof_bowl',
-        style: 'indigenous',
-        proteinSourceType: 'poultry',
-        calories: 680,
-        protein: 46,
-        carbs: 70,
-        fat: 22,
-        fiber: 6,
-        cookTimeMinutes: 40,
-        readyToEatQuery: 'Chicken Katsu with Jollof Rice',
-        ingredients: [
-          { name: 'Chicken Breast', gramWeight: 200, baseNGNCost: 1400, protein: 40, carbs: 0, fat: 5, fiber: 0, sourcingLocation: 'Makola Poultry Stalls' },
-          { name: 'Jollof Rice', gramWeight: 200, baseNGNCost: 450, protein: 8, carbs: 62, fat: 4, fiber: 3, sourcingLocation: 'Makola Rice Millers' },
-          { name: 'Breadcrumb Crust', gramWeight: 60, baseNGNCost: 180, protein: 3, carbs: 14, fat: 5, fiber: 1, sourcingLocation: 'Makola Bakeries' },
-          { name: 'Coleslaw', gramWeight: 120, baseNGNCost: 160, protein: 2, carbs: 12, fat: 6, fiber: 3, sourcingLocation: 'Makola Vegetable Stall' },
-        ],
-        prepInstructions: [
-          'Coat the seasoned chicken in flour, egg then breadcrumbs.',
-          'Shallow-fry until deep golden and drain on paper.',
-          'Serve over jollof rice with coleslaw on the side.',
-        ]
-      }
     ],
     eggs_dairy: [
       {
