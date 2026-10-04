@@ -119,32 +119,7 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
       }
     ],
     eggs_dairy: [
-      {
-        title: 'Egg Custard Bread (Saj) with Pap',
-        description: 'Saj: a soft, custardy bread loaf scented with nutmeg, served with a bowl of pap.',
-        visualType: 'oatmeal_parfait',
-        style: 'indigenous',
-        proteinSourceType: 'eggs_dairy',
-        calories: 540,
-        protein: 20,
-        carbs: 70,
-        fat: 20,
-        fiber: 5,
-        cookTimeMinutes: 45,
-        readyToEatQuery: 'Egg Custard Bread with Pap',
-        ingredients: [
-          { name: 'Eggs', gramWeight: 150, baseNGNCost: 560, protein: 16, carbs: 1, fat: 11, fiber: 0, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Flour', gramWeight: 180, baseNGNCost: 260, protein: 7, carbs: 56, fat: 1, fiber: 3, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Sugar & Milk', gramWeight: 80, baseNGNCost: 180, protein: 3, carbs: 26, fat: 4, fiber: 0, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Nutmeg & Vanilla', gramWeight: 5, baseNGNCost: 60, protein: 0, carbs: 1, fat: 1, fiber: 0, sourcingLocation: 'Ikeja GRA Market' },
-        ],
-        prepInstructions: [
-          'Whisk eggs, milk, sugar and flour into a smooth custard.',
-          'Bake the batter in a greased loaf tin until puffed and set.',
-          'Serve slices with warm pap.',
-        ]
-      },
-      {
+            {
         title: 'Boiled Eggs with Moin-Moin & Steamed Plantain',
         description: 'Hard-boiled eggs with soft steamed moin-moin and ripe plantain.',
         visualType: 'yam_egg_skillet',
@@ -302,32 +277,7 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
           'Serve with boiled yam, pepper sauce and tomato.',
         ]
       },
-      {
-        title: 'Battered Prawns with Sweet Potato Fries & Slaw',
-        description: 'Crunchy battered prawns with sweet potato fries and a sharp cabbage slaw.',
-        visualType: 'grilled_fish',
-        style: 'indigenous',
-        proteinSourceType: 'fish',
-        calories: 650,
-        protein: 38,
-        carbs: 68,
-        fat: 24,
-        fiber: 9,
-        cookTimeMinutes: 30,
-        readyToEatQuery: 'Battered Prawns with Sweet Potato',
-        ingredients: [
-          { name: 'Prawns', gramWeight: 200, baseNGNCost: 1900, protein: 40, carbs: 0, fat: 4, fiber: 0, sourcingLocation: 'Ajah Market, Lagos' },
-          { name: 'Batter Coating', gramWeight: 90, baseNGNCost: 260, protein: 4, carbs: 26, fat: 8, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Sweet Potato Fries', gramWeight: 200, baseNGNCost: 420, protein: 4, carbs: 44, fat: 12, fiber: 6, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Cabbage Slaw', gramWeight: 120, baseNGNCost: 180, protein: 2, carbs: 12, fat: 6, fiber: 3, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Toss cleaned prawns in seasoned batter and fry until crisp.',
-          'Cut the sweet potato into fingers and fry or bake until caramelised.',
-          'Serve with slaw.',
-        ]
-      }
-    ],
+          ],
     poultry: [
       {
         title: 'Chicken Afang Soup with Pounded Yam',
@@ -406,111 +356,11 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
           'Finish with spring onion and serve with salad.',
         ]
       },
-      {
-        title: 'Mushroom Omelette Wrap with Sweet Potato & Avocado',
-        description: 'A folded mushroom omelette in a warm wrap, with roasted sweet potato and avocado.',
-        visualType: 'yam_egg_skillet',
-        style: 'indigenous',
-        proteinSourceType: 'eggs_dairy',
-        calories: 590,
-        protein: 28,
-        carbs: 58,
-        fat: 24,
-        fiber: 10,
-        cookTimeMinutes: 25,
-        readyToEatQuery: 'Mushroom Omelette Wrap',
-        ingredients: [
-          { name: 'Eggs', gramWeight: 150, baseNGNCost: 560, protein: 16, carbs: 1, fat: 11, fiber: 0, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Mushrooms', gramWeight: 150, baseNGNCost: 300, protein: 5, carbs: 8, fat: 3, fiber: 3, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Flour Wrap', gramWeight: 90, baseNGNCost: 290, protein: 8, carbs: 38, fat: 4, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Sweet Potato & Avocado', gramWeight: 200, baseNGNCost: 480, protein: 5, carbs: 38, fat: 20, fiber: 9, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Saute the mushrooms in butter until they release their water and it evaporates.',
-          'Fold them into whipped eggs and cook the omelette softly.',
-          'Fill the warmed wrap and serve with roasted sweet potato and avocado.',
-        ]
-      }
-    ],
+          ],
     legumes_plant: [
-      {
-        title: 'Suya-Style Grilled Vegetable Skewers with Couscous',
-        description: 'Suya-spiced vegetable skewers grilled over charcoal, with couscous and tomato.',
-        visualType: 'chicken_salad',
-        style: 'indigenous',
-        proteinSourceType: 'legumes_plant',
-        calories: 600,
-        protein: 20,
-        carbs: 72,
-        fat: 20,
-        fiber: 14,
-        cookTimeMinutes: 35,
-        readyToEatQuery: 'Grilled Vegetable Suya Skewers',
-        ingredients: [
-          { name: 'Suya Spice Rub', gramWeight: 12, baseNGNCost: 120, protein: 2, carbs: 4, fat: 4, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Mixed Vegetables', gramWeight: 250, baseNGNCost: 420, protein: 8, carbs: 30, fat: 8, fiber: 12, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Couscous', gramWeight: 180, baseNGNCost: 480, protein: 8, carbs: 62, fat: 2, fiber: 5, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Tomato & Onion', gramWeight: 120, baseNGNCost: 180, protein: 2, carbs: 14, fat: 3, fiber: 4, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Thread the chopped vegetables onto skewers and rub with suya spice.',
-          'Grill over charcoal, turning, until charred and tender.',
-          'Serve with couscous and tomato.',
-        ]
-      },
-      {
-        title: 'Akara Burger with Sweet Potato & Slaw',
-        description: 'A crisp akara fritter in a bun with spicy sauce, sweet potato wedges and slaw.',
-        visualType: 'beans_plantain',
-        style: 'indigenous',
-        proteinSourceType: 'legumes_plant',
-        calories: 620,
-        protein: 20,
-        carbs: 74,
-        fat: 22,
-        fiber: 13,
-        cookTimeMinutes: 30,
-        readyToEatQuery: 'Akara Burger with Sweet Potato',
-        ingredients: [
-          { name: 'Akara (Bean Fritters)', gramWeight: 160, baseNGNCost: 450, protein: 10, carbs: 28, fat: 11, fiber: 7, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Burger Bun', gramWeight: 80, baseNGNCost: 200, protein: 7, carbs: 36, fat: 3, fiber: 3, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Sweet Potato Wedges', gramWeight: 200, baseNGNCost: 420, protein: 4, carbs: 44, fat: 12, fiber: 6, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Spicy Sauce & Slaw', gramWeight: 120, baseNGNCost: 220, protein: 2, carbs: 16, fat: 8, fiber: 4, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Fry the akara batter until golden and drain.',
-          'Toast the bun and spread with spicy sauce.',
-          'Stack with the akara, slaw and sweet potato wedges.',
-        ]
-      }
-    ],
+                ],
     beef_lean: [
-      {
-        title: 'Asun Beef with Fried Plantain & Tomato',
-        description: 'Asun: fire-grilled, chilli-scorched beef with fried plantain and fresh tomato.',
-        visualType: 'grilled_fish',
-        style: 'indigenous',
-        proteinSourceType: 'beef_lean',
-        calories: 690,
-        protein: 46,
-        carbs: 58,
-        fat: 26,
-        fiber: 7,
-        cookTimeMinutes: 35,
-        readyToEatQuery: 'Asun Grilled Beef with Plantain',
-        ingredients: [
-          { name: 'Beef Ribs', gramWeight: 200, baseNGNCost: 2400, protein: 42, carbs: 0, fat: 18, fiber: 0, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Asun Pepper Spice', gramWeight: 14, baseNGNCost: 160, protein: 2, carbs: 4, fat: 5, fiber: 2, sourcingLocation: 'Ikeja GRA Market' },
-          { name: 'Fried Plantain', gramWeight: 140, baseNGNCost: 400, protein: 2, carbs: 32, fat: 10, fiber: 3, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Tomato & Cucumber', gramWeight: 150, baseNGNCost: 220, protein: 2, carbs: 16, fat: 3, fiber: 5, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Marinate the beef ribs with asun pepper spice for several hours.',
-          'Grill quickly over open flame until scorched at the edges.',
-          'Serve with fried plantain and tomato.',
-        ]
-      },
-      {
+            {
         title: 'Okpei Beef Pepper Soup with Boiled Plantain',
         description: 'Okpei: a fiery beef pepper soup with utazi and palm fruit, served with boiled plantain.',
         visualType: 'stew_swallow',
@@ -616,32 +466,7 @@ export const NIGERIA_POOL_EXTRAS: Record<'breakfasts' | 'afternoons' | 'evenings
           'Serve the stew over rice with vegetables on the side.',
         ]
       },
-      {
-        title: 'African Sushi Grilled Chicken & Okra Soup with Yam',
-        description: 'Okra soup with grilled chicken, plantain and yam - often called African sushi.',
-        visualType: 'stew_swallow',
-        style: 'indigenous',
-        proteinSourceType: 'poultry',
-        calories: 630,
-        protein: 42,
-        carbs: 58,
-        fat: 22,
-        fiber: 10,
-        cookTimeMinutes: 50,
-        readyToEatQuery: 'African Sushi with Grilled Chicken',
-        ingredients: [
-          { name: 'Chicken Thigh', gramWeight: 180, baseNGNCost: 1300, protein: 40, carbs: 0, fat: 9, fiber: 0, sourcingLocation: 'Oyingbo Market, Lagos' },
-          { name: 'Okra', gramWeight: 180, baseNGNCost: 360, protein: 7, carbs: 18, fat: 13, fiber: 11, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Boiled Yam', gramWeight: 200, baseNGNCost: 480, protein: 6, carbs: 44, fat: 1, fiber: 5, sourcingLocation: 'Balogun Market, Lagos' },
-          { name: 'Ripe Plantain', gramWeight: 100, baseNGNCost: 300, protein: 2, carbs: 24, fat: 7, fiber: 2, sourcingLocation: 'Balogun Market, Lagos' },
-        ],
-        prepInstructions: [
-          'Slice the okra and simmer it with palm oil, pepper and water until thick.',
-          'Grill the marinated chicken until charred.',
-          'Serve the chicken with okra soup, yam and plantain.',
-        ]
-      }
-    ],
+          ],
     eggs_dairy: [
       {
         title: 'Egg Roll with Garden Egg Stew',

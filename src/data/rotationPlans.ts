@@ -2,6 +2,7 @@ import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
 import { COUNTRIES } from './countries';
 import { COUNTRY_CUISINES, resolveCuisineSources } from './cuisineCatalog';
 import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
+import { NIGERIA_AUTHENTIC_POOLS } from './nigeriaAuthenticPools';
 import { CONTINENTAL_POOL_EXTRAS } from './continentalPoolsExtra';
 
 type ProteinKey = MealBlueprint['proteinSourceType'];
@@ -103,57 +104,9 @@ const INDIGENOUS_BREAKFASTS: Record<Meal['proteinSourceType'], MealBlueprint[]> 
     }
   ],
   poultry: [
-    {
-      title: 'Whole Oats Porridge with Shredded Peppered Chicken Breast',
-      description: 'Savoury cooked cereal paired with lean shredded chicken breast tossed in dry Cameroon pepper, ginger, and garlic.',
-      visualType: 'oatmeal_parfait',
-      style: 'indigenous',
-      proteinSourceType: 'poultry',
-      calories: 520,
-      protein: 42,
-      carbs: 64,
-      fat: 10,
-      fiber: 8,
-      cookTimeMinutes: 15,
-      readyToEatQuery: 'Oats with Chicken or Shredded Chicken Bowl',
-      ingredients: [
-        { name: 'Rolled Oats', gramWeight: 90, baseNGNCost: 450, protein: 12, carbs: 56, fat: 6, fiber: 8, sourcingLocation: 'Bodija Dry Grain Mart' },
-        { name: 'Chicken Breast (Lean)', gramWeight: 150, baseNGNCost: 950, protein: 30, carbs: 0, fat: 3.5, fiber: 0, sourcingLocation: 'Cold Room Poultry Stand' },
-        { name: 'Cameroon Pepper & Seasoning', gramWeight: 10, baseNGNCost: 100, protein: 0, carbs: 8, fat: 0.5, fiber: 0, sourcingLocation: 'Local Spice Market' }
       ],
-      prepInstructions: [
-        'Boil oats with 350ml water until thickened.',
-        'Dice chicken breast into 1cm cubes and pan-sear with garlic, ginger, and Cameroon pepper for 6 minutes.',
-        'Layer seasoned chicken over hot oats.'
-      ]
-    }
-  ],
   eggs_dairy: [
-    {
-      title: 'Steamed Sweet Potato & 3-Egg Garden Egg Shakshuka',
-      description: 'Slow-steamed orange-fleshed sweet potato discs paired with a 3-egg scramble infused with garden egg slices, scent leaves, and tomatoes.',
-      visualType: 'yam_egg_skillet',
-      style: 'indigenous',
-      proteinSourceType: 'eggs_dairy',
-      calories: 540,
-      protein: 28,
-      carbs: 66,
-      fat: 18,
-      fiber: 10,
-      cookTimeMinutes: 18,
-      readyToEatQuery: 'Sweet Potato and Scrambled Eggs',
-      ingredients: [
-        { name: 'Orange Sweet Potato', gramWeight: 240, baseNGNCost: 500, protein: 4, carbs: 60, fat: 0.5, fiber: 8, sourcingLocation: 'Local Roots Stall' },
-        { name: 'Fresh Farm Eggs (3 Large)', gramWeight: 150, baseNGNCost: 650, protein: 21, carbs: 2, fat: 15, fiber: 0, sourcingLocation: 'Mile 12 Egg Depot' },
-        { name: 'Garden Egg & Scent Leaves', gramWeight: 80, baseNGNCost: 200, protein: 3, carbs: 4, fat: 0.5, fiber: 2, sourcingLocation: 'Fresh Herb Stalls' }
       ],
-      prepInstructions: [
-        'Steam sweet potato chunks until fork tender (12 mins).',
-        'Finely chop garden eggs and scent leaves.',
-        'Whisk 3 eggs, pour into a lightly oiled pan with simmered garden eggs, and fold gently.'
-      ]
-    }
-  ],
   legumes_plant: [
     {
       title: 'Steamed Moi-Moi Elewe with Fortified Brown Garri Crunch',
@@ -321,7 +274,7 @@ const INDIGENOUS_AFTERNOONS: Record<Meal['proteinSourceType'], MealBlueprint[]> 
   ],
   beef_lean: [
     {
-      title: 'Basmati Jollof with Lean Goat Meat (Asun Style) & Steamed Veggies',
+      title: 'Goat Meat with Rice & Steamed Vegetables',
       description: 'Long grain rice tossed in smoky tomato-habanero paste served with trimmed lean goat meat seared with diced rodo and onions.',
       visualType: 'jollof_bowl',
       style: 'indigenous',
@@ -895,13 +848,15 @@ function mergeNigeriaPoolExtras(): void {
     ['afternoons', INDIGENOUS_AFTERNOONS],
     ['evenings', INDIGENOUS_EVENING]
   ];
-  for (const [slot, pool] of targets) {
-    for (const [protein, dishes] of Object.entries(NIGERIA_POOL_EXTRAS[slot])) {
-      const bucket = pool[protein as ProteinKey];
-      if (!bucket) continue;
-      for (const dish of dishes) {
-        if (!bucket.some((existing) => existing.title === dish.title)) {
-          bucket.push(dish);
+  for (const source of [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS]) {
+    for (const [slot, pool] of targets) {
+      for (const [protein, dishes] of Object.entries(source[slot])) {
+        const bucket = pool[protein as ProteinKey];
+        if (!bucket) continue;
+        for (const dish of dishes) {
+          if (!bucket.some((existing) => existing.title === dish.title)) {
+            bucket.push(dish);
+          }
         }
       }
     }
@@ -1050,6 +1005,22 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
   const proteinForSlot = (day: number, slot: number) =>
     PROTEIN_ROTATION[((day - 1) * SLOTS_PER_DAY + slot) % PROTEIN_ROTATION.length];
 
+  // Count how many times each slot has asked for each protein, and index pools by
+  // that visit count rather than by the day number.
+  //
+  // A slot only meets its protein every fifth day, so the old `day - 1` index
+  // was identical across days 3, 8, 13, 18 and 23 for any pool whose length
+  // divides five. A five-dish pool therefore served one dish for the whole 28
+  // days, and a one-dish pool never had a chance to show anything else. Three,
+  // the size the pools used to be, hid the bug because 3 does not divide 5.
+  const slotProteinVisits = new Map<string, number>();
+  const visitNumber = (slot: number, protein: ProteinKey) => {
+    const key = `${slot}:${protein}`;
+    const seen = slotProteinVisits.get(key) ?? 0;
+    slotProteinVisits.set(key, seen + 1);
+    return seen + 1;
+  };
+
   for (let day = 1; day <= 28; day++) {
 
     // Determine style based on user preference or alternate on balanced
@@ -1100,12 +1071,22 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
     const afternoonPrototypes = afternoonSource[afternoonProtein];
     const eveningPrototypes = eveningSource[eveningProtein];
 
-    const morningProto = pickFromPool(morningPrototypes, day, 0, new Set());
-    const afternoonProto = pickFromPool(afternoonPrototypes, day, 0, new Set([morningProto.title]));
+    const morningProto = pickFromPool(
+      morningPrototypes,
+      visitNumber(0, morningProtein),
+      0,
+      new Set()
+    );
+    const afternoonProto = pickFromPool(
+      afternoonPrototypes,
+      visitNumber(1, afternoonProtein),
+      0,
+      new Set([morningProto.title])
+    );
     const eveningProto = pickDistinctFromSource(
       eveningSource,
       eveningProtein,
-      day,
+      visitNumber(2, eveningProtein),
       1,
       new Set([morningProto.title, afternoonProto.title])
     );

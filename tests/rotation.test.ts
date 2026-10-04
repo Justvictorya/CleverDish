@@ -168,9 +168,44 @@ test('the Nigerian plan is no longer a five-day cycle', () => {
   const counts = new Map<string, number>();
   for (const meal of plan) counts.set(meal.title, (counts.get(meal.title) ?? 0) + 1);
 
-  assert.equal(counts.size, 45, 'expected 45 distinct Nigerian dishes (15 original + 30 added)');
+  // A floor rather than an exact figure, so adding real Nigerian dishes later
+  // widens the cycle instead of breaking the test.
+  assert.ok(
+    counts.size >= 75,
+    `only ${counts.size} distinct Nigerian dishes; the pools were meant to hold far more`
+  );
   const worst = Math.max(...counts.values());
   assert.ok(worst <= 3, `a Nigerian dish still repeats ${worst} times in 28 days`);
+});
+
+test('every Nigerian slot draws on its whole pool', () => {
+  // Pools are indexed by visit count, not by day. A slot meets its protein every
+  // fifth day, so indexing by day meant `(day - 1) % poolLength` never moved for
+  // any pool whose length divides five, and a five-dish pool served one dish for
+  // the whole cycle. Each slot should see every dish its pool holds.
+  const plan = generate28DayPlan('NG', 'indigenous');
+  const slots = ['morning', 'afternoon', 'evening'] as const;
+  const proteins = ['fish', 'poultry', 'eggs_dairy', 'legumes_plant', 'beef_lean'] as const;
+
+  for (const slot of slots) {
+    for (const protein of proteins) {
+      const served = new Set(
+        plan
+          .filter((meal) => meal.type === slot && meal.proteinSourceType === protein)
+          .map((meal) => meal.title)
+      );
+      const meals = plan.filter(
+        (meal) => meal.type === slot && meal.proteinSourceType === protein
+      ).length;
+      // A slot meets a given protein roughly 28/5 times, so it cannot see more
+      // distinct dishes than it has visits. The failure this guards against is
+      // seeing one dish out of many across several visits.
+      assert.ok(
+        served.size >= Math.min(3, meals),
+        `${slot}/${protein} served only ${served.size} distinct dishes across ${meals} visits`
+      );
+    }
+  }
 });
 
 test('catfish no longer fills every Nigerian fish slot', () => {
@@ -286,5 +321,61 @@ test('catfish never lands twice in one day', () => {
       catfishThatDay.length <= 1,
       `day ${day + 1} served catfish ${catfishThatDay.length} times`
     );
+  }
+});
+
+test('no Nigerian dish carries an ethnic or regional label', () => {
+  // Agreed with the product owner: titles describe the bowl in plain English.
+  // Attributing a dish to an ethnic group is contestable, tells the user nothing
+  // useful about the food, and has caused real arguments. Local names are fine
+  // where they are simply the name of the dish, so this only bans the group and
+  // region words, plus the origin claims that were appearing in the copy.
+  const banned =
+    /\b(yoruba|igbo|hausa|efik|ibibio|fulani|tribal|ethnic|native to|northern|western style|eastern style)\b/i;
+
+  for (const preference of ['indigenous', 'balanced', 'continental'] as const) {
+    for (const meal of generate28DayPlan('NG', preference)) {
+      assert.ok(
+        !banned.test(meal.title),
+        `"${meal.title}" is labelled with an ethnic or regional name`
+      );
+      assert.ok(
+        !banned.test(meal.description),
+        `the description of "${meal.title}" is labelled with an ethnic or regional name`
+      );
+    }
+  }
+});
+
+test('no Nigerian plan serves food from another country', () => {
+  // An earlier batch of Nigerian dishes was written from memory rather than
+  // sourced, and sushi, couscous, shakshuka and a burger made it into the plan.
+  // These are foods with their own countries and cuisines; if one reappears in
+  // the Nigerian plan it has been copied in from the wrong catalogue.
+  const foreign = [
+    /sushi/i,
+    /couscous/i,
+    /shakshuka/i,
+    /\bslaw\b/i,
+    /\bburger\b/i,
+    /sweet potato fries/i,
+    /\bsaj\b/i,
+    /turkey bacon/i,
+    /avocado/i,
+    /\boats\b/i
+  ];
+
+  // Only the indigenous plan is claimed to be Nigerian food. The continental
+  // preference exists precisely to serve food from elsewhere, and the balanced
+  // plan mixes the two, so neither is evidence of a mistake.
+  for (const meal of generate28DayPlan('NG', 'indigenous')) {
+    {
+      for (const pattern of foreign) {
+        assert.ok(
+          !pattern.test(meal.title),
+          `"${meal.title}" is not Nigerian food; it matches ${pattern}`
+        );
+      }
+    }
   }
 });

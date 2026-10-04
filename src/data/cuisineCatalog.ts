@@ -92,7 +92,7 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
       ],
       eggs_dairy: [
         {
-          title: 'Hausa Kuli with Fried Egg',
+          title: 'Savory Rice Cakes with Fried Egg',
           description: 'Northern Ghanaian spongy rice cakes steamed to a light fluff, served with stew and a fried egg.',
           visualType: 'yam_egg_skillet',
           style: 'indigenous',
@@ -103,9 +103,9 @@ export const COUNTRY_CUISINES: Partial<Record<CountryCode, CountryCuisine>> = {
           fat: 14,
           fiber: 5,
           cookTimeMinutes: 25,
-          readyToEatQuery: 'Hausa Kuli',
+          readyToEatQuery: 'Rice Cakes with Fried Egg',
           ingredients: [
-            { name: 'Hausa Kuli Rice Cakes', gramWeight: 220, baseNGNCost: 450, protein: 6, carbs: 78, fat: 1, fiber: 2, sourcingLocation: 'Makola Market (Kuli Stalls)' },
+            { name: 'Crisp Rice Cakes', gramWeight: 220, baseNGNCost: 450, protein: 6, carbs: 78, fat: 1, fiber: 2, sourcingLocation: 'Makola Market (Kuli Stalls)' },
             { name: 'Tomto Stew', gramWeight: 120, baseNGNCost: 400, protein: 4, carbs: 12, fat: 6, fiber: 3, sourcingLocation: 'Local Tomato Sellers' },
             { name: 'Fried Eggs', gramWeight: 70, baseNGNCost: 400, protein: 10, carbs: 1, fat: 7, fiber: 0, sourcingLocation: 'Egg Wholesale Depot' }
           ],
