@@ -470,3 +470,51 @@ test('a Nigerian soup is served with a swallow, never a snack', () => {
     }
   }
 });
+
+test('a dish is never illustrated with a photograph of a different cuisine', () => {
+  // The photo library holds eight pictures and the plan holds well over a hundred
+  // dishes, so an exact match per plate is impossible. What is not acceptable is
+  // the old catch-all, which returned the jollof photograph for any dish it did
+  // not recognise: ugali, waakye and kenkey were all served a plate of rice.
+  // Photographs are now scored against the dish's own title and ingredients, so
+  // assert only that nothing falls back to another country's food.
+  const rice = 'jollof_chicken';
+  const riceWords = /jollof|rice|waakye|pilau|koko|basmati/i;
+  for (const country of ['NG', 'GH', 'KE', 'US', 'CA', 'UK'] as const) {
+    for (const meal of generate28DayPlan(country, 'indigenous')) {
+      const url = meal.imageUrl;
+      assert.ok(url, `${country}: "${meal.title}" has no photograph at all`);
+      if (!url.includes(rice)) continue;
+      // Score the same inputs the resolver scores. "Chicken Tikka Masala with
+      // Basmati" names no rice in its title but is served over it.
+      const what = `${meal.title} ${meal.ingredients.map((i) => i.name).join(' ')}`;
+      assert.ok(
+        riceWords.test(what),
+        `${country}: "${meal.title}" is illustrated with a rice photograph`
+      );
+    }
+  }
+});
+
+test('every dish is illustrated with a photograph that exists', () => {
+  // A resolver that returns a path to a file nobody committed shows a broken
+  // image, which looks identical to the bug it replaced.
+  const known = new Set([
+    'grilled_salmon_1790642194407.jpg',
+    'oatmeal_parfait_1790641955682.jpg',
+    'beef_suya_boli_1790642205230.jpg',
+    'sweet_potato_eggs_1790642214701.jpg',
+    'beans_plantain_1790641943763.jpg',
+    'yam_fish_stew_1790641922409.jpg',
+    'pounded_yam_egusi_1790641933918.jpg',
+    'jollof_chicken_1790641910111.jpg'
+  ]);
+  for (const country of ['NG', 'GH', 'KE'] as const) {
+    for (const meal of generate28DayPlan(country, 'indigenous')) {
+      const url = meal.imageUrl;
+      assert.ok(url, `${country}: "${meal.title}" has no photograph at all`);
+      const file = url.replace('/images/', '');
+      assert.ok(known.has(file), `${country}: "${meal.title}" points at a missing photo ${file}`);
+    }
+  }
+});

@@ -75,8 +75,9 @@ import { soundFX } from './utils/sound';
 // for Ghana, which was serving chicken katsu, suya and coleslaw. v6 fixed the
 // same class of error in Nigeria: soups were being handed over with an egg roll
 // instead of a swallow. v7 gives Nigeria the soups it actually eats, and stops
-// the rotation from being unable to reach them.
-const MEAL_PLAN_VERSION = 8;
+// the rotation from being unable to reach them. v8 stops the photograph picker
+// falling back to a plate of rice for every dish it did not recognise.
+const MEAL_PLAN_VERSION = 9;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',

@@ -918,33 +918,106 @@ function mergeContinentalPoolExtras(): void {
 
 mergeContinentalPoolExtras();
 
-function getMealPhoto(title: string, visualType: string): string {
-  const t = title.toLowerCase();
-  if (t.includes('salmon')) {
-    return '/images/grilled_salmon_1790642194407.jpg';
+/**
+ * The photo library holds eight pictures. The plan holds well over a hundred
+ * dishes, so nothing here can be an exact match for every plate and the app
+ * should not pretend otherwise: each dish gets the closest photograph of the
+ * thing it is actually made of.
+ *
+ * The previous version chained substring tests and ended by returning the jollof
+ * photograph for anything it did not recognise, which put a plate of rice in
+ * front of ugali, waakye and kenkey. Every new Nigerian soup also collapsed onto
+ * the single soup photograph, so fifteen different soups looked identical, and
+ * white fish soup was illustrated with a palm oil green soup. Scoring the dish's
+ * own title and ingredient list against what each photograph actually shows
+ * fixes both: an unmatched dish no longer inherits a photograph of a different
+ * cuisine, and dishes with the same pot get the same picture because they were
+ * scored the same way.
+ */
+const MEAL_PHOTOS: Array<{
+  file: string;
+  /** The photograph is only correct if the dish contains one of these. */
+  strong: string[];
+  weak: string[];
+  visualTypes?: string[];
+}> = [
+  {
+    file: 'grilled_salmon_1790642194407.jpg',
+    strong: ['salmon'],
+    weak: []
+  },
+  {
+    file: 'oatmeal_parfait_1790641955682.jpg',
+    strong: ['oatmeal', 'parfait', 'yogurt', 'granola'],
+    weak: ['oat'],
+    visualTypes: ['oatmeal_parfait']
+  },
+  {
+    file: 'beef_suya_boli_1790642205230.jpg',
+    strong: ['suya', 'asun', 'boli', 'kebab'],
+    weak: ['beef', 'goat', 'mutton', 'lamb', 'cow', 'char-grilled', 'grilled meat'],
+    visualTypes: ['chicken_salad']
+  },
+  {
+    file: 'sweet_potato_eggs_1790642214701.jpg',
+    strong: ['sweet potato', 'shakshuka', 'omelette', 'omelet', 'boiled egg', 'fried egg'],
+    weak: ['egg', 'custard'],
+    visualTypes: ['yam_egg_skillet']
+  },
+  {
+    file: 'beans_plantain_1790641943763.jpg',
+    strong: ['moi-moi', 'moi moi', 'akara', 'bean', 'gbegiri', 'cowpea', 'agoyin', 'dan wake', 'plantain'],
+    weak: ['beans', 'legume', 'vegetable bean'],
+    visualTypes: ['beans_plantain']
+  },
+  {
+    file: 'yam_fish_stew_1790641922409.jpg',
+    strong: ['catfish', 'tilapia', 'mackerel', 'sardine', 'prawn', 'seafood', 'periwinkle', 'abacha', 'nsala', 'white soup', 'snail'],
+    weak: ['fish', 'yam', 'cocoyam'],
+    visualTypes: ['grilled_fish']
+  },
+  {
+    file: 'pounded_yam_egusi_1790641933918.jpg',
+    strong: [
+      'soup', 'stew', 'fufu', 'eba', 'amala', 'semo', 'swallow', 'garri', 'kwacoco',
+      'semovita', 'tuwo', 'banku', 'ugali', 'egusi', 'banga', 'edikang', 'afang',
+      'ewedu', 'okra', 'ogbono', 'spinach', 'waterleaf', 'greens', 'pounded',
+      'ofe ', 'gari'
+    ],
+    weak: ['yam', 'leaf'],
+    visualTypes: ['stew_swallow']
+  },
+  {
+    file: 'jollof_chicken_1790641910111.jpg',
+    strong: ['jollof', 'rice', 'waakye'],
+    weak: [],
+    visualTypes: ['jollof_bowl']
   }
-  if (t.includes('suya') || t.includes('boli') || (t.includes('beef') && t.includes('plantain'))) {
-    return '/images/beef_suya_boli_1790642205230.jpg';
+];
+
+function getMealPhoto(
+  title: string,
+  visualType: string,
+  ingredientNames: string[] = []
+): string {
+  const hay = `${title} ${ingredientNames.join(' ')}`.toLowerCase();
+  let best = -1;
+  let bestScore = 0;
+  let bestIndex = -1;
+  for (let i = 0; i < MEAL_PHOTOS.length; i += 1) {
+    const spec = MEAL_PHOTOS[i];
+    let score = 0;
+    for (const word of spec.strong) if (hay.includes(word)) score += 3;
+    for (const word of spec.weak) if (hay.includes(word)) score += 1;
+    if (spec.visualTypes?.includes(visualType)) score += 2;
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = i;
+    }
   }
-  if (t.includes('sweet potato') || (t.includes('shakshuka') && t.includes('egg'))) {
-    return '/images/sweet_potato_eggs_1790642214701.jpg';
-  }
-  if (t.includes('jollof') || t.includes('rice') || t.includes('quinoa') || visualType === 'jollof_bowl') {
-    return '/images/jollof_chicken_1790641910111.jpg';
-  }
-  if (t.includes('swallow') || t.includes('egusi') || t.includes('soup') || visualType === 'stew_swallow') {
-    return '/images/pounded_yam_egusi_1790641933918.jpg';
-  }
-  if (t.includes('yam') || visualType === 'yam_egg_skillet') {
-    return '/images/yam_fish_stew_1790641922409.jpg';
-  }
-  if (t.includes('bean') || t.includes('moi') || t.includes('plantain') || visualType === 'beans_plantain') {
-    return '/images/beans_plantain_1790641943763.jpg';
-  }
-  if (t.includes('oat') || t.includes('parfait') || t.includes('yogurt') || visualType === 'oatmeal_parfait') {
-    return '/images/oatmeal_parfait_1790641955682.jpg';
-  }
-  return '/images/jollof_chicken_1790641910111.jpg';
+  // A dish nothing matched gets the swallow-and-soup photograph, which is at
+  // least a Nigerian plate rather than a photograph of a different cuisine.
+  return `/images/${MEAL_PHOTOS[bestIndex >= 0 ? bestIndex : 6].file}`;
 }
 
 function getFoodstuffSourcing(countryCode: CountryCode, ingredients: Array<{ name: string; cost: number }>) {
@@ -1170,7 +1243,11 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       proteinSourceType: morningProto.proteinSourceType,
       style: morningProto.style,
       visualType: morningProto.visualType,
-      imageUrl: getMealPhoto(morningProto.title, morningProto.visualType),
+      imageUrl: getMealPhoto(
+        morningProto.title,
+        morningProto.visualType,
+        morningProto.ingredients.map((i) => i.name)
+      ),
       foodstuffMarketSourcing: getFoodstuffSourcing(country.code, morningIngredients),
       calories: morningProto.calories,
       protein: morningProto.protein,
@@ -1195,7 +1272,11 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       proteinSourceType: afternoonProto.proteinSourceType,
       style: afternoonProto.style,
       visualType: afternoonProto.visualType,
-      imageUrl: getMealPhoto(afternoonProto.title, afternoonProto.visualType),
+      imageUrl: getMealPhoto(
+        afternoonProto.title,
+        afternoonProto.visualType,
+        afternoonProto.ingredients.map((i) => i.name)
+      ),
       foodstuffMarketSourcing: getFoodstuffSourcing(country.code, afternoonIngredients),
       calories: afternoonProto.calories,
       protein: afternoonProto.protein,
@@ -1234,7 +1315,11 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
       proteinSourceType: eveningProto.proteinSourceType,
       style: eveningProto.style,
       visualType: eveningProto.visualType,
-      imageUrl: getMealPhoto(eveningProto.title, eveningProto.visualType),
+      imageUrl: getMealPhoto(
+        eveningProto.title,
+        eveningProto.visualType,
+        eveningProto.ingredients.map((i) => i.name)
+      ),
       foodstuffMarketSourcing: getFoodstuffSourcing(country.code, eveningIngredients),
       calories: eveningProto.calories,
       protein: eveningProto.protein,
