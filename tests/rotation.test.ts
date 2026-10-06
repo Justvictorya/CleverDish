@@ -10,7 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync } from 'fs';
 import path from 'path';
-import { generate28DayPlan } from '../src/data/rotationPlans';
+import { generate28DayPlan, getMealPhoto } from '../src/data/rotationPlans';
 import { COUNTRY_CUISINES, dishKey } from '../src/data/cuisineCatalog';
 import type { CountryCode, Meal, StaplePreference } from '../src/types';
 
@@ -265,7 +265,13 @@ test('generated meals point at photos that are actually served', () => {
   // meal rendered a broken image and hid the dish art behind it.
   const photos = readdirSync(path.join(process.cwd(), 'public', 'images'));
   assert.ok(photos.length > 0, 'public/images is empty');
+  // CC BY-SA 4.0 requires the author and licence to travel with the photograph,
+  // so the attribution file has to be served from next to the images rather
+  // than only from the repository. Anything else here that is not an image is a
+  // mistake, which is what this loop is for.
+  const sidecars = new Set(['ATTRIBUTION.md']);
   for (const photo of photos) {
+    if (sidecars.has(photo)) continue;
     assert.match(photo, /\.(jpg|jpeg|png|webp)$/i, `${photo} is not an image`);
   }
 
@@ -507,7 +513,12 @@ test('every dish is illustrated with a photograph that exists', () => {
     'beans_plantain_1790641943763.jpg',
     'yam_fish_stew_1790641922409.jpg',
     'pounded_yam_egusi_1790641933918.jpg',
-    'jollof_chicken_1790641910111.jpg'
+    'jollof_chicken_1790641910111.jpg',
+    'afang_soup_pounded_yam.jpg',
+    'edikang_ikong_fufu.jpg',
+    'egusi_soup_pounded_yam.jpg',
+    'ogbono_soup_meats.jpg',
+    'banga_soup_eba.jpg'
   ]);
   for (const country of ['NG', 'GH', 'KE'] as const) {
     for (const meal of generate28DayPlan(country, 'indigenous')) {
@@ -517,4 +528,87 @@ test('every dish is illustrated with a photograph that exists', () => {
       assert.ok(known.has(file), `${country}: "${meal.title}" points at a missing photo ${file}`);
     }
   }
+});
+
+test('a dish that names its own soup is shown that soup', () => {
+  // Each of these has a photograph of itself on Commons. The catch-all soup
+  // photograph must not win just because it also matches the swallow.
+  const named: Array<[string, string]> = [
+    ['Afang Soup with Chicken and Pounded Yam', 'afang_soup_pounded_yam.jpg'],
+    ['Chicken Afang Soup with Pounded Yam', 'afang_soup_pounded_yam.jpg'],
+    ['Edikang Ikong Soup with Chicken and Eba', 'edikang_ikong_fufu.jpg'],
+    ['Egusi Soup with Goat Meat and Amala', 'egusi_soup_pounded_yam.jpg'],
+    ['Okra and Ogbono Soup with Fish and Eba', 'ogbono_soup_meats.jpg'],
+    ['Banga Soup with Chicken and Fufu', 'banga_soup_eba.jpg']
+  ];
+  for (const [title, file] of named) {
+    const url = getMealPhoto(title, 'stew_swallow', []);
+    assert.ok(
+      url.endsWith(file),
+      `"${title}" should be shown ${file} but was shown ${url.replace('/images/', '')}`
+    );
+  }
+});
+
+test('the leafy soups stand in for afang, and it does not spread', () => {
+  // A waterleaf-family soup with no photograph of its own looks like afang, so
+  // afang stands in. But afang must not become the default for everything that
+  // merely has waterleaf in the ingredient list.
+  for (const title of [
+    'Waterleaf Soup with Cowpea Stew and Semovita',
+    'Pumpkin Leaf and Waterleaf Soup with Beef and Pounded Yam',
+    'Efo Riro Soup with Bean Stew and Fufu',
+    'Ewedu Soup with Boiled Egg and Garri',
+    'Okazi Soup with Snail and Pounded Yam'
+  ]) {
+    assert.ok(
+      getMealPhoto(title, 'stew_swallow', []).endsWith('afang_soup_pounded_yam.jpg'),
+      `"${title}" should be shown the afang photograph`
+    );
+  }
+  // Bean dumplings are served in pepper sauce built on waterleaf. Scoring the
+  // ingredient put a green soup in front of them.
+  const dumplings = getMealPhoto('Bean Dumplings in Pepper Sauce', 'beans_plantain', [
+    'Shredded Cocoyam',
+    'Waterleaf',
+    'Pepper Sauce'
+  ]);
+  assert.ok(
+    !dumplings.endsWith('afang_soup_pounded_yam.jpg'),
+    `Bean dumplings were shown a green soup: ${dumplings}`
+  );
+});
+
+test('one swallow is not counted twice', () => {
+  // "semovita" contains "semo". Counting both pushed the catch-all photograph
+  // above afang for "Waterleaf Soup with Cowpea Stew and Semovita".
+  const waterleaf = getMealPhoto('Waterleaf Soup with Cowpea Stew and Semovita', 'stew_swallow', [
+    'Waterleaf',
+    'Cowpea',
+    'Semovita'
+  ]);
+  assert.ok(
+    waterleaf.endsWith('afang_soup_pounded_yam.jpg'),
+    `Semovita was counted as both semo and semovita, sending "${waterleaf}"`
+  );
+  // A genuinely swallowed dish with no photograph of its own still falls back.
+  const generic = getMealPhoto('White Yam Soup with Goat Meat', 'stew_swallow', [
+    'White Yam',
+    'Goat Meat',
+    'Pounded Yam'
+  ]);
+  assert.ok(
+    generic.endsWith('pounded_yam_egusi_1790641933918.jpg'),
+    `An unspecific soup should fall back to the Nigerian soup photograph, got ${generic}`
+  );
+});
+
+test('a dish nothing matches falls back to a photograph that exists', () => {
+  // The fallback used to be MEAL_PHOTOS[6], a position that silently became the
+  // parfait as soon as photographs were added to the front of the table.
+  const url = getMealPhoto('Zzz Unmatched Dish', 'unknown_visual_type', ['Qqq']);
+  assert.ok(
+    url.endsWith('pounded_yam_egusi_1790641933918.jpg'),
+    `Unmatched dishes should fall back to the Nigerian soup photograph, got ${url}`
+  );
 });

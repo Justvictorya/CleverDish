@@ -940,7 +940,60 @@ const MEAL_PHOTOS: Array<{
   strong: string[];
   weak: string[];
   visualTypes?: string[];
+  /** Score against the dish name only, ignoring its ingredient list. */
+  titleOnly?: boolean;
+  /** The photograph to fall back on when nothing else matches. */
+  catchAll?: boolean;
+  /**
+   * Named dishes score double. "Banga Soup with Catfish and Kwacoco" matches
+   * both the banga photograph and the swallow bucket on "kwacoco", and the
+   * photograph of banga is the right answer.
+   */
+  weight?: number;
 }> = [
+  {
+    // The remaining leafy palm-oil soups, which afang stands in for because that
+    // is what they look like in the bowl: a dark green soup with a swallow
+    // beside it.
+    //
+    // Anchored to dish names, and "waterleaf soup" rather than "waterleaf",
+    // because these words are also ingredients. Scoring the bare ingredient put a
+    // green soup in front of "Bean Dumplings in Pepper Sauce", whose pepper sauce
+    // is built on waterleaf. First in the table because the legacy afang dish is
+    // cooked on a palm fruit base, so it would otherwise tie with the banga
+    // photograph and lose to it.
+    file: 'afang_soup_pounded_yam.jpg',
+    strong: ['afang', 'okazi', 'ewedu', 'efo riro', 'efo shoko', 'waterleaf soup', 'okoroenyeribe', 'jute mallow'],
+    weak: ['bitter leaf soup'],
+    weight: 3
+  },
+  {
+    // Scored on the dish name. An edikang ikong pot is built on waterleaf and
+    // pumpkin leaf, so matching those ingredients would send it to the afang
+    // photograph.
+    file: 'edikang_ikong_fufu.jpg',
+    strong: ['edikang ikong', 'edikang', 'edikaikong'],
+    weak: [],
+    weight: 3
+  },
+  {
+    file: 'egusi_soup_pounded_yam.jpg',
+    strong: ['egusi', 'melon seed'],
+    weak: [],
+    weight: 3
+  },
+  {
+    file: 'ogbono_soup_meats.jpg',
+    strong: ['ogbono'],
+    weak: ['draw soup'],
+    weight: 3
+  },
+  {
+    file: 'banga_soup_eba.jpg',
+    strong: ['banga', 'palm fruit', 'palm nut', 'palm kernel'],
+    weak: [],
+    weight: 3
+  },
   {
     file: 'grilled_salmon_1790642194407.jpg',
     strong: ['salmon'],
@@ -978,14 +1031,18 @@ const MEAL_PHOTOS: Array<{
   },
   {
     file: 'pounded_yam_egusi_1790641933918.jpg',
-    strong: [
-      'soup', 'stew', 'fufu', 'eba', 'amala', 'semo', 'swallow', 'garri', 'kwacoco',
-      'semovita', 'tuwo', 'banku', 'ugali', 'egusi', 'banga', 'edikang', 'afang',
-      'ewedu', 'okra', 'ogbono', 'spinach', 'waterleaf', 'greens', 'pounded',
-      'ofe ', 'gari'
-    ],
-    weak: ['yam', 'leaf'],
-    visualTypes: ['stew_swallow']
+    // The catch-all for a soup with no photograph of its own. Deliberately
+    // weaker than a named dish: these words say "soup with a swallow", not which
+    // soup, so a dish that names its own leaves or seed outranks this.
+    strong: ['fufu', 'eba', 'amala', 'semo', 'garri', 'kwacoco', 'semovita', 'tuwo', 'banku', 'ugali', 'ofe '],
+    weak: ['soup', 'stew', 'pounded', 'yam', 'leaf', 'gari', 'okra', 'spinach', 'swallow'],
+    visualTypes: ['stew_swallow'],
+    catchAll: true,
+    // Title only. "Pumpkin Leaf and Waterleaf Soup with Beef and Pounded Yam"
+    // was reaching twelve here, because its ingredient list spelled the swallow
+    // as "Eba" and "Pounded Yam Swallow" at the same time, and beat the afang
+    // photograph to a soup it is plainly not.
+    titleOnly: true
   },
   {
     file: 'jollof_chicken_1790641910111.jpg',
@@ -995,20 +1052,34 @@ const MEAL_PHOTOS: Array<{
   }
 ];
 
-function getMealPhoto(
+export function getMealPhoto(
   title: string,
   visualType: string,
   ingredientNames: string[] = []
 ): string {
+  const nameHay = title.toLowerCase();
   const hay = `${title} ${ingredientNames.join(' ')}`.toLowerCase();
   let best = -1;
   let bestScore = 0;
   let bestIndex = -1;
   for (let i = 0; i < MEAL_PHOTOS.length; i += 1) {
     const spec = MEAL_PHOTOS[i];
+    const w = spec.weight ?? 1;
     let score = 0;
-    for (const word of spec.strong) if (hay.includes(word)) score += 3;
-    for (const word of spec.weak) if (hay.includes(word)) score += 1;
+    // Count the longest word that matched, not every word hiding inside it.
+    // "semovita" contains "semo", and scoring both counted one swallow twice,
+    // which was enough to pull "Waterleaf Soup with Cowpea Stew and Semovita"
+    // onto the catch-all photograph instead of afang.
+    const source = spec.titleOnly ? nameHay : hay;
+    const longestHits = (words: string[]) => {
+      const matched = words.filter(word => source.includes(word));
+      return matched.filter(
+        word =>
+          !matched.some(other => other.length > word.length && other.includes(word))
+      );
+    };
+    for (const word of longestHits(spec.strong)) score += 3 * w;
+    for (const word of longestHits(spec.weak)) score += w;
     if (spec.visualTypes?.includes(visualType)) score += 2;
     if (score > bestScore) {
       bestScore = score;
@@ -1017,7 +1088,11 @@ function getMealPhoto(
   }
   // A dish nothing matched gets the swallow-and-soup photograph, which is at
   // least a Nigerian plate rather than a photograph of a different cuisine.
-  return `/images/${MEAL_PHOTOS[bestIndex >= 0 ? bestIndex : 6].file}`;
+  // Found by flag, not by position: this was once MEAL_PHOTOS[6], which quietly
+  // became the parfait the moment photographs were added to the front of the
+  // table.
+  if (bestIndex < 0) bestIndex = MEAL_PHOTOS.findIndex(spec => spec.catchAll);
+  return `/images/${MEAL_PHOTOS[bestIndex].file}`;
 }
 
 function getFoodstuffSourcing(countryCode: CountryCode, ingredients: Array<{ name: string; cost: number }>) {
