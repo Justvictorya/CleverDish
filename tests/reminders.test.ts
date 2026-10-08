@@ -140,6 +140,15 @@ test('cycleDayFor tolerates a malformed start date', () => {
   assert.equal(cycleDayFor('Africa/Accra', 'not-a-date', new Date('2026-10-01T07:30:00Z')), 1);
 });
 
+test('cycleDayFor reads an ISO timestamp as the date it names', () => {
+  // Onboarding writes new Date().toISOString(). Split on '-' alone made the day
+  // NaN, hasValidStart came back false, and every reminder announced day 1 no
+  // matter how long the plan had been running.
+  const iso = '2026-10-01T07:31:00.000Z';
+  assert.equal(cycleDayFor('Africa/Accra', iso, new Date('2026-10-04T07:30:00Z')), 4);
+  assert.equal(cycleDayFor('Africa/Accra', iso, new Date('2026-10-29T07:30:00Z')), 1, 'wraps after a full cycle');
+});
+
 // ---------------------------------------------------------------------------
 // Input validation
 // ---------------------------------------------------------------------------

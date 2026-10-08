@@ -19,7 +19,10 @@ export function getTodaysCycleDay(planStartDate?: string): number {
   // Date objects loses a day whenever a DST shift falls between them (e.g. a
   // plan started in GMT and now viewed during BST), which silently shifted
   // the rotation by one. Date.UTC on the calendar parts is DST-proof.
-  const [startYear, startMonth, startDay] = planStartDate.split('-').map(Number);
+  // Onboarding writes a full ISO timestamp, not a bare date, so split off the
+  // time first: Number('08T07:31:00.000Z') is NaN, validStart came back false,
+  // and every onboarded profile read as day 1 forever — the rotation never moved.
+  const [startYear, startMonth, startDay] = planStartDate.split('T')[0].split('-').map(Number);
   const validStart =
     Number.isFinite(startYear) && Number.isFinite(startMonth) && Number.isFinite(startDay);
 

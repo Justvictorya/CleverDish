@@ -357,7 +357,10 @@ export function cycleDayFor(timezone: string, planStartDate: string | undefined,
   // Read the calendar parts straight out of the string. Going through
   // new Date(...) + getFullYear() would reinterpret the date in the
   // *server's* zone, which is wrong whenever the subscriber's zone differs.
-  const [sy, sm, sd] = planStartDate.split('-').map(Number);
+  // Same parse as the client: onboarding stores a full ISO timestamp, and
+  // Number('08T07:31:00.000Z') is NaN, which silently pinned every reminder to
+  // day 1 of the rotation.
+  const [sy, sm, sd] = planStartDate.split('T')[0].split('-').map(Number);
   const hasValidStart = Number.isFinite(sy) && Number.isFinite(sm) && Number.isFinite(sd);
   const diffDays = hasValidStart
     ? Math.floor((toUtcDays(year, month, day) - toUtcDays(sy, sm, sd)) / 86_400_000)
