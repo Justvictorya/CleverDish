@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -10,15 +10,21 @@ import {
   Legend,
   ReferenceLine
 } from 'recharts';
-import { UserProfile, MacroTargets } from '../types';
-import { BarChart3, TrendingUp, Sparkles, CheckCircle2, Info } from 'lucide-react';
+import { UserProfile, MacroTargets, Meal } from '../types';
+import { buildWeekHistory } from '../data/mealHistory';
+import { FoodLogEntry } from '../data/foodLog';
+import { BarChart3, Info, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface WeeklyMacroChartProps {
   profile: UserProfile;
   macros: MacroTargets;
+  /** The whole plan, so each bar reflects the plates that day actually held. */
+  meals: Meal[];
+  /** Hand-logged food for the last seven days, keyed by YYYY-MM-DD. */
+  logsByDate: Record<string, FoodLogEntry[]>;
 }
 
-export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, macros }) => {
+export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, macros, meals, logsByDate }) => {
   const [viewMode, setViewMode] = useState<'macros' | 'stacked' | 'calories'>('macros');
 
   // Brand Palette Constants
@@ -27,143 +33,104 @@ export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, mac
   const COLOR_FAT = '#E67E22';     // Warm Amber
   const COLOR_FIBER = '#3498DB';   // Accent Blue
 
-  // Weekly data calibrated around user's Mifflin-St Jeor targets
-  // Reflects the 5-protein rotation: Fish, Poultry, Eggs/Dairy, Legumes, Lean Beef, etc.
-  const weeklyData = [
-    {
-      day: 'Mon (D1)',
-      fullDay: 'Monday · Fish Protein Rotation',
-      protein: Math.round(macros.proteinGrams * 0.98),
-      carbs: Math.round(macros.carbsGrams * 0.95),
-      fat: Math.round(macros.fatGrams * 1.02),
-      fiber: Math.round(macros.fiberGrams * 0.96),
-      calories: Math.round(macros.targetCalories * 0.97),
-      verifiedPlate: true,
-      loggedCost: profile.country === 'NG' ? 2450 : 12.80
-    },
-    {
-      day: 'Tue (D2)',
-      fullDay: 'Tuesday · Poultry Rotation',
-      protein: Math.round(macros.proteinGrams * 1.03),
-      carbs: Math.round(macros.carbsGrams * 0.98),
-      fat: Math.round(macros.fatGrams * 0.94),
-      fiber: Math.round(macros.fiberGrams * 1.02),
-      calories: Math.round(macros.targetCalories * 1.01),
-      verifiedPlate: true,
-      loggedCost: profile.country === 'NG' ? 2600 : 13.50
-    },
-    {
-      day: 'Wed (D3)',
-      fullDay: 'Wednesday · Eggs & Garden Scramble',
-      protein: Math.round(macros.proteinGrams * 0.95),
-      carbs: Math.round(macros.carbsGrams * 1.04),
-      fat: Math.round(macros.fatGrams * 1.08),
-      fiber: Math.round(macros.fiberGrams * 0.98),
-      calories: Math.round(macros.targetCalories * 1.02),
-      verifiedPlate: true,
-      loggedCost: profile.country === 'NG' ? 2200 : 11.90
-    },
-    {
-      day: 'Thu (D4)',
-      fullDay: 'Thursday · High-Fiber Honey Beans',
-      protein: Math.round(macros.proteinGrams * 1.05),
-      carbs: Math.round(macros.carbsGrams * 1.02),
-      fat: Math.round(macros.fatGrams * 0.90),
-      fiber: Math.round(macros.fiberGrams * 1.25),
-      calories: Math.round(macros.targetCalories * 0.99),
-      verifiedPlate: true,
-      loggedCost: profile.country === 'NG' ? 2100 : 11.20
-    },
-    {
-      day: 'Fri (D5)',
-      fullDay: 'Friday · Lean Beef / Suya Rotation',
-      protein: Math.round(macros.proteinGrams * 1.08),
-      carbs: Math.round(macros.carbsGrams * 0.94),
-      fat: Math.round(macros.fatGrams * 1.05),
-      fiber: Math.round(macros.fiberGrams * 0.92),
-      calories: Math.round(macros.targetCalories * 1.03),
-      verifiedPlate: true,
-      loggedCost: profile.country === 'NG' ? 2850 : 14.60
-    },
-    {
-      day: 'Sat (D6)',
-      fullDay: 'Saturday · Farm Catfish & Brown Rice',
-      protein: Math.round(macros.proteinGrams * 1.01),
-      carbs: Math.round(macros.carbsGrams * 1.06),
-      fat: Math.round(macros.fatGrams * 0.97),
-      fiber: Math.round(macros.fiberGrams * 1.05),
-      calories: Math.round(macros.targetCalories * 1.02),
-      verifiedPlate: true,
-      loggedCost: profile.country === 'NG' ? 2700 : 13.90
-    },
-    {
-      day: 'Sun (D7)',
-      fullDay: 'Sunday · Roast Chicken & Roasted Plantain',
-      protein: Math.round(macros.proteinGrams * 0.99),
-      carbs: Math.round(macros.carbsGrams * 0.97),
-      fat: Math.round(macros.fatGrams * 0.95),
-      fiber: Math.round(macros.fiberGrams * 0.95),
-      calories: Math.round(macros.targetCalories * 0.98),
-      verifiedPlate: false,
-      loggedCost: profile.country === 'NG' ? 2500 : 12.90
-    }
-  ];
+  const historyData = useMemo(
+    () =>
+      buildWeekHistory({
+        today: new Date(),
+        planStartDate: profile.planStartDate,
+        meals,
+        macros,
+        logsByDate
+      }),
+    [profile.planStartDate, meals, macros, logsByDate]
+  );
+
+  // Bars plot what was eaten. A day nobody snapped or logged draws at zero,
+  // which is what the chart used to hide by inventing a week instead.
+  const weeklyData = historyData.map((record) => ({
+    day: record.dayName,
+    fullDay: record.fullDate,
+    protein: record.proteinGrams,
+    carbs: record.carbsGrams,
+    fat: record.fatGrams,
+    fiber: record.fiberGrams,
+    calories: record.actualCalories,
+    plannedCalories: record.plannedCalories,
+    verifiedPlate: record.photoVerified,
+    loggedCount: record.loggedEntries.length,
+    recorded: record.actualCalories > 0
+  }));
+
+  const recordedDays = historyData.filter((day) => day.actualCalories > 0);
+  const calorieHits = recordedDays.filter(
+    (day) => Math.abs(day.actualCalories - macros.targetCalories) <= macros.targetCalories * 0.05
+  ).length;
+  const proteinHits = recordedDays.filter((day) => day.proteinGrams >= macros.proteinGrams * 0.9).length;
+  const calorieAdherence = recordedDays.length ? Math.round((calorieHits / recordedDays.length) * 100) : null;
+  const proteinAdherence = recordedDays.length ? Math.round((proteinHits / recordedDays.length) * 100) : null;
+  const averageFiber = recordedDays.length
+    ? Math.round(recordedDays.reduce((sum, day) => sum + day.fiberGrams, 0) / recordedDays.length)
+    : null;
 
   // Custom high-contrast tooltip adhering to brand style
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const dataPoint = payload[0].payload;
+      const dataPoint = payload[0].payload as (typeof weeklyData)[number];
       return (
         <div className="bg-stone-900 text-white p-3.5 rounded-2xl shadow-xl border border-stone-700/80 text-xs font-sans space-y-2 min-w-[200px]">
           <div className="border-b border-stone-700 pb-1.5">
             <div className="font-bold text-sm text-stone-100">{dataPoint.fullDay}</div>
             <div className="text-[10px] text-stone-400 font-mono">
-              Total Energy: {dataPoint.calories} kcal · Target: {macros.targetCalories} kcal
+              Eaten: {dataPoint.calories} kcal · Planned: {dataPoint.plannedCalories} kcal · Target: {macros.targetCalories} kcal
             </div>
           </div>
 
           <div className="space-y-1 font-mono text-[11px]">
-            <div className="flex items-center justify-between text-stone-200">
+            <div className="flex justify-between items-center text-stone-200">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#7A1C2C]" />
-                <span>Protein (Deep Maroon)</span>
+                <span>Protein</span>
               </span>
               <span className="font-bold">{dataPoint.protein}g</span>
             </div>
 
-            <div className="flex items-center justify-between text-stone-200">
+            <div className="flex justify-between items-center text-stone-200">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#2ECC71]" />
-                <span>Carbs (Mint Green)</span>
+                <span>Carbs</span>
               </span>
               <span className="font-bold">{dataPoint.carbs}g</span>
             </div>
 
-            <div className="flex items-center justify-between text-stone-200">
+            <div className="flex justify-between items-center text-stone-200">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#E67E22]" />
-                <span>Fat (Amber)</span>
+                <span>Fat</span>
               </span>
               <span className="font-bold">{dataPoint.fat}g</span>
             </div>
 
-            <div className="flex items-center justify-between text-stone-200">
+            <div className="flex justify-between items-center text-stone-200">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#3498DB]" />
-                <span>Fiber (Blue)</span>
+                <span>Fiber</span>
               </span>
               <span className="font-bold">{dataPoint.fiber}g</span>
             </div>
           </div>
 
           <div className="pt-1.5 border-t border-stone-800 flex items-center justify-between text-[10px]">
-            <span className="text-stone-400">Plate Verification:</span>
+            <span className="text-stone-400">Record:</span>
             {dataPoint.verifiedPlate ? (
               <span className="text-[#2ECC71] font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Magic-byte Verified
+                <CheckCircle2 className="w-3 h-3" /> Plate snapped
+              </span>
+            ) : dataPoint.loggedCount > 0 ? (
+              <span className="text-amber-400 font-medium flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {dataPoint.loggedCount} logged by hand
               </span>
             ) : (
-              <span className="text-amber-400 font-medium">Pending Photo</span>
+              <span className="text-stone-400 font-medium">Nothing recorded</span>
             )}
           </div>
         </div>
@@ -185,10 +152,10 @@ export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, mac
               Weekly Macro Distribution
             </h3>
             <span className="text-stone-300">·</span>
-            <span className="text-xs font-mono text-stone-500">Mifflin-St Jeor Engine</span>
+            <span className="text-xs font-mono text-stone-500">{recordedDays.length}/7 days recorded</span>
           </div>
           <p className="text-xs text-stone-500">
-            Adherence tracking across your 7-day protein rotation and budget floors.
+            Protein, carbs and fat from the plates you snapped and the food you logged.
           </p>
         </div>
 
@@ -265,7 +232,7 @@ export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, mac
               />
               <Bar
                 dataKey="calories"
-                name="Daily Calories (kcal)"
+                name="Eaten (kcal)"
                 fill={COLOR_PROTEIN}
                 radius={[6, 6, 0, 0]}
                 maxBarSize={45}
@@ -325,7 +292,7 @@ export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, mac
               />
               <Bar
                 dataKey="fat"
-                name="Healthy Fats (g)"
+                name="Fat (g)"
                 fill={COLOR_FAT}
                 stackId={viewMode === 'stacked' ? 'macros' : undefined}
                 radius={viewMode === 'stacked' ? [0, 0, 0, 0] : [4, 4, 0, 0]}
@@ -344,27 +311,27 @@ export const WeeklyMacroChart: React.FC<WeeklyMacroChartProps> = ({ profile, mac
         </ResponsiveContainer>
       </div>
 
-      {/* Metric Breakdown Badges adhering to Zero-Pill Rule */}
+      {/* Metric Breakdown Badges */}
       <div className="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-4 text-xs text-stone-600">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 font-semibold text-stone-900">
             <span className="w-2.5 h-2.5 rounded-full bg-[#7A1C2C]" />
-            Protein Adherence: 98.4%
+            Protein hit on {proteinAdherence === null ? '—' : `${proteinAdherence}%`} of recorded days
           </span>
           <span className="text-stone-300">·</span>
           <span className="flex items-center gap-1.5 font-semibold text-stone-900">
             <span className="w-2.5 h-2.5 rounded-full bg-[#2ECC71]" />
-            Caloric Target Solvency: 99.1%
+            Within 5% of target on {calorieAdherence === null ? '—' : `${calorieAdherence}%`}
           </span>
           <span className="text-stone-300">·</span>
           <span className="flex items-center gap-1.5 text-stone-500 font-mono">
-            Avg Fiber: {macros.fiberGrams}g/day
+            Avg fiber: {averageFiber === null ? '—' : `${averageFiber}g`}/day (snapped plates)
           </span>
         </div>
 
         <div className="text-[11px] text-stone-400 font-mono flex items-center gap-1">
           <Info className="w-3.5 h-3.5 text-stone-400" />
-          <span>Colors: Deep Maroon (#7A1C2C) · Mint Green (#2ECC71) · Amber (#E67E22)</span>
+          <span>{recordedDays.length === 0 ? 'Snap a plate or log food to fill this in' : 'Counted from recorded days only'}</span>
         </div>
       </div>
     </div>

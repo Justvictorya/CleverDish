@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile, Meal, CountryCode, FitnessGoal } from './types';
 import { COUNTRIES } from './data/countries';
 import { generate28DayPlan } from './data/rotationPlans';
@@ -30,6 +30,17 @@ import { FridgeRescueModal } from './components/FridgeRescueModal';
 import { FreezerVaultModal } from './components/FreezerVaultModal';
 import { AccomplishmentCenterModal } from './components/AccomplishmentCenterModal';
 import { BodyStatisticsTab } from './components/BodyStatisticsTab';
+import { FoodLogModal } from './components/FoodLogModal';
+import {
+  FoodLogEntry,
+  NewFoodInput,
+  addFoodEntry,
+  lastSevenDays,
+  loadFoodLog,
+  removeFoodEntry,
+  sumFoodEntries,
+  todayKey
+} from './data/foodLog';
 import { FreezerVaultItem, CleverBadge, DailyQuest, CommunityChallenge } from './types';
 import { getDefaultDailyQuests, INITIAL_BADGES, getChefTier, getDefaultChallenges } from './utils/gamification';
 import { SignUpOnboardingFlow } from './components/SignUpOnboardingFlow';
@@ -54,7 +65,8 @@ import {
   RefreshCw,
   Utensils,
   Clock,
-  ShoppingBag
+  ShoppingBag,
+  Plus
 } from 'lucide-react';
 import { soundFX } from './utils/sound';
 
@@ -206,6 +218,12 @@ export default function App() {
   const [isAccomplishmentOpen, setIsAccomplishmentOpen] = useState(false);
   const [levelUpToast, setLevelUpToast] = useState<{ show: boolean; level: number; title: string } | null>(null);
   const [selectedVendorMeal, setSelectedVendorMeal] = useState<Meal | null>(null);
+
+  // Off-plan eating: suya bought on the way home, a bottle of malt shared with
+  // a friend. The plan cannot know about these, so they are logged by hand and
+  // counted into the same consumed figure as snapped plates.
+  const [foodLog, setFoodLog] = useState<FoodLogEntry[]>(() => loadFoodLog(profile.id, todayKey()));
+  const [isFoodLogOpen, setIsFoodLogOpen] = useState(false);
 
   const handleOrderFromVendors = (meal: Meal) => {
     setSelectedVendorMeal(meal);
@@ -373,12 +391,45 @@ export default function App() {
     localStorage.setItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}`), JSON.stringify(meals));
   }, [meals, profile.country, profile.staplePreference]);
 
+  // Reload the day's log when the profile changes and at midnight, so the
+  // ledger never carries yesterday's entries into today.
+  useEffect(() => {
+    setFoodLog(loadFoodLog(profile.id, todayKey()));
+  }, [profile.id, currentDateFormatted]);
+
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
   const macros = calculateMacros(profile);
   const budgetVerdict = computeBudgetVerdict(profile);
 
   // Current day's morning and afternoon meals
   const todaysMeals = meals.filter(m => m.dayNumber === selectedDay);
+
+  // What was actually eaten today: snapped plan plates plus hand-logged food.
+  const loggedToday = sumFoodEntries(foodLog);
+  const verifiedCaloriesToday = todaysMeals
+    .filter(m => m.photoVerified)
+    .reduce((sum, m) => sum + m.calories, 0);
+  const consumedCaloriesToday = verifiedCaloriesToday + loggedToday.calories;
+  const plannedCaloriesToday = todaysMeals.reduce((sum, m) => sum + m.calories, 0);
+
+  // The history chart reads seven days, six of them straight from storage.
+  // Memoised: App re-renders on nearly every interaction and re-parsing six
+  // days of entries each time is pure waste.
+  const foodLogsWeek = useMemo(() => {
+    const week: Record<string, FoodLogEntry[]> = {};
+    for (const key of lastSevenDays()) {
+      week[key] = key === todayKey() ? foodLog : loadFoodLog(profile.id, key);
+    }
+    return week;
+  }, [profile.id, currentDateFormatted, foodLog]);
+
+  const handleLogFood = (input: NewFoodInput) => {
+    setFoodLog(prev => addFoodEntry(profile.id, todayKey(), input, prev));
+  };
+
+  const handleRemoveLoggedFood = (id: string) => {
+    setFoodLog(prev => removeFoodEntry(profile.id, todayKey(), id, prev));
+  };
 
   // Filter verified vendors for active country
   const countryVendors = VERIFIED_VENDORS.filter(v => v.country === profile.country);
@@ -640,6 +691,10 @@ export default function App() {
           const allVerifiedToday = orderedMeals.length > 0 && orderedMeals.every(m => m.photoVerified);
           const chefTier = getChefTier(profile.xp ?? profile.cleverPoints ?? 380);
 
+          const todayPercent = macros.targetCalories > 0
+            ? Math.min(100, Math.round((consumedCaloriesToday / macros.targetCalories) * 100))
+            : 0;
+
           return (
             <div className="space-y-6 max-w-4xl mx-auto">
               {/* Clean Compact Day Status & Carousel */}
@@ -699,6 +754,59 @@ export default function App() {
                       Today
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* 1b. THE CALORIE LEDGER: what has been eaten, against the target */}
+              <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-zinc-800 shadow-xs p-4 sm:p-5 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase tracking-wider text-stone-500 dark:text-zinc-400 flex items-center gap-1.5">
+                        <Flame className="w-3.5 h-3.5 text-[#2ECC71]" />
+                        Today's Calories
+                      </span>
+                      {selectedDay !== todaysCycleDay && (
+                        <span className="text-[10px] font-bold text-stone-400 dark:text-zinc-500">
+                          logging applies to today
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-stone-400 dark:text-zinc-500 font-mono mt-0.5">
+                      {consumedCaloriesToday} of {macros.targetCalories} kcal
+                      <span className="text-stone-500 dark:text-zinc-400">
+                        {' '}· {Math.max(0, macros.targetCalories - consumedCaloriesToday)} left
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundFX.playTap();
+                      setIsFoodLogOpen(true);
+                    }}
+                    className="shrink-0 px-4 py-2.5 rounded-2xl bg-[#2ECC71] hover:bg-[#27ae60] active:scale-95 text-white text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Log Food
+                  </button>
+                </div>
+
+                <div className="w-full h-2.5 bg-stone-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-[#2ECC71] to-emerald-400 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${todayPercent}%` }}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-stone-500 dark:text-zinc-400">
+                  <span>Snapped plan: {verifiedCaloriesToday} kcal</span>
+                  <span className={loggedToday.calories > 0 ? 'text-[#2ECC71] font-bold' : ''}>
+                    Logged: {loggedToday.calories} kcal
+                    {loggedToday.count > 0 ? ` (${loggedToday.count})` : ''}
+                  </span>
+                  <span>Planned total: {plannedCaloriesToday} kcal</span>
                 </div>
               </div>
 
@@ -900,6 +1008,9 @@ export default function App() {
             profile={profile}
             macros={macros}
             todaysMeals={todaysMeals}
+            meals={meals}
+            foodLogs={foodLogsWeek}
+            onOpenFoodLog={() => setIsFoodLogOpen(true)}
             freezerVault={freezerVault}
             country={country}
             onOpenHandGuide={(m) => {
@@ -1205,6 +1316,17 @@ export default function App() {
         meal={fridgeRescueMeal}
         onApplyRescueMeal={handleApplyRescueMeal}
         country={country}
+      />
+
+      <FoodLogModal
+        isOpen={isFoodLogOpen}
+        onClose={() => setIsFoodLogOpen(false)}
+        dateLabel={new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+        entries={foodLog}
+        targetCalories={macros.targetCalories}
+        consumedCalories={consumedCaloriesToday}
+        onAdd={handleLogFood}
+        onRemove={handleRemoveLoggedFood}
       />
 
       <FreezerVaultModal

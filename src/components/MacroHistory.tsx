@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -10,149 +10,63 @@ import {
   ReferenceLine,
   Legend
 } from 'recharts';
-import { UserProfile, MacroTargets } from '../types';
-import {
-  History,
-  TrendingDown,
-  TrendingUp,
-  Target,
-  Sparkles,
-  Flame,
-  CheckCircle2,
-  AlertCircle,
-  Calendar,
-  Layers,
-  Sliders,
-  ChevronRight,
-  Info
-} from 'lucide-react';
+import { UserProfile, MacroTargets, Meal } from '../types';
+import { buildWeekHistory, cycleDayForDate, DayHistoryRecord } from '../data/mealHistory';
+import { FoodLogEntry } from '../data/foodLog';
+import { History, CheckCircle2, Layers, Sliders } from 'lucide-react';
 import { soundFX } from '../utils/sound';
-import { storageKey } from '../utils/storage';
 
 interface MacroHistoryProps {
   profile: UserProfile;
   macros: MacroTargets;
+  /** The whole 28-day plan, so each past day can show what was on it. */
+  meals: Meal[];
+  /** Food-log entries for the last seven days, keyed by YYYY-MM-DD. */
+  logsByDate: Record<string, FoodLogEntry[]>;
 }
 
-export interface DailyCalorieRecord {
-  id: string;
-  dayLabel: string;
-  dayName: string;
-  fullDate: string;
-  actualCalories: number;
-  targetCalories: number;
-  tdee: number;
-  proteinGrams: number;
-  carbsGrams: number;
-  fatGrams: number;
-  proteinSource: string;
-  photoVerified: boolean;
-  delta: number;
-}
+export type DailyCalorieRecord = DayHistoryRecord;
 
-export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) => {
+const typeLabel: Record<string, string> = {
+  morning: 'Morning',
+  afternoon: 'Afternoon',
+  evening: 'Evening'
+};
+
+export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros, meals, logsByDate }) => {
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
-  const [chartView, setChartView] = useState<'area' | 'comparison' | 'split'>('area');
-  const [activeMetric, setActiveMetric] = useState<'calories' | 'protein' | 'carbs' | 'fat'>('calories');
+  const [chartView, setChartView] = useState<'area' | 'comparison'>('area');
 
-  const historyStorageKey = storageKey(`macro_history_${profile.id}_${profile.goal}`);
+  // Real weeks only: snapped plates plus hand-logged food. Days nobody recorded
+  // read as zero rather than as a plausible-looking guess.
+  const historyData = useMemo(
+    () =>
+      buildWeekHistory({
+        today: new Date(),
+        planStartDate: profile.planStartDate,
+        meals,
+        macros,
+        logsByDate
+      }),
+    [profile.planStartDate, meals, macros, logsByDate]
+  );
 
-  // Generate or load 7-day trailing records
-  const [historyData, setHistoryData] = useState<DailyCalorieRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem(historyStorageKey);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-
-    // Generate calibrated last 7 days leading to today
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const proteins = [
-      'Atlantic Mackerel (Fish)',
-      'Char-Grilled Chicken (Poultry)',
-      'Garden Shakshuka (Eggs)',
-      'Honey Beans Porridge (Plant)',
-      'Suya Beef Skewers (Lean Beef)',
-      'Pan-Seared Salmon (Fish)',
-      'Pepper Turkey (Poultry)'
-    ];
-
-    const today = new Date();
-    const records: DailyCalorieRecord[] = [];
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const dayName = i === 0 ? 'Today' : days[d.getDay() === 0 ? 6 : d.getDay() - 1];
-      const monthDay = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      const fullDate = d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
-
-      // Calibrate realistic variance around target (+/- 4%)
-      const varianceFactors = [-0.03, 0.02, -0.01, 0.04, -0.02, 0.01, 0.0];
-      const factor = varianceFactors[6 - i] ?? 0;
-      const actualCal = Math.round(macros.targetCalories * (1 + factor));
-      const delta = actualCal - macros.targetCalories;
-
-      records.push({
-        id: `day_${7 - i}`,
-        dayLabel: i === 0 ? 'Today' : monthDay,
-        dayName,
-        fullDate,
-        actualCalories: actualCal,
-        targetCalories: macros.targetCalories,
-        tdee: macros.tdee,
-        proteinGrams: Math.round(macros.proteinGrams * (1 + factor * 0.8)),
-        carbsGrams: Math.round(macros.carbsGrams * (1 + factor * 1.1)),
-        fatGrams: Math.round(macros.fatGrams * (1 + factor * 0.9)),
-        proteinSource: proteins[6 - i] || 'Indigenous Protein',
-        photoVerified: i < 5,
-        delta
-      });
-    }
-
-    return records;
-  });
-
-  // Sync to local storage
-  useEffect(() => {
-    localStorage.setItem(historyStorageKey, JSON.stringify(historyData));
-  }, [historyData, historyStorageKey]);
-
-  // Aggregate 7-Day calculations
   const totalActualCalories = historyData.reduce((acc, curr) => acc + curr.actualCalories, 0);
-  const averageActualCalories = Math.round(totalActualCalories / historyData.length);
+  const recordedDays = historyData.filter((day) => day.actualCalories > 0);
+  const averageActualCalories = recordedDays.length
+    ? Math.round(totalActualCalories / recordedDays.length)
+    : 0;
   const averageVariance = averageActualCalories - macros.targetCalories;
-  const adherenceCount = historyData.filter(d => Math.abs(d.delta) <= (macros.targetCalories * 0.05)).length;
-  const adherencePercent = Math.round((adherenceCount / historyData.length) * 100);
+  const adherenceCount = historyData.filter((day) => day.actualCalories > 0 && Math.abs(day.delta) <= macros.targetCalories * 0.05).length;
+  const recordedCount = recordedDays.length || 1;
+  const adherencePercent = Math.round((adherenceCount / recordedCount) * 100);
 
   const highestDay = [...historyData].sort((a, b) => b.actualCalories - a.actualCalories)[0];
   const lowestDay = [...historyData].sort((a, b) => a.actualCalories - b.actualCalories)[0];
 
-  // Quick edit or simulation of intake for interactive adjustments
-  const handleAdjustIntake = (dayId: string, newCalories: number) => {
-    soundFX.playTap();
-    setHistoryData(prev => prev.map(rec => {
-      if (rec.id === dayId) {
-        const delta = newCalories - rec.targetCalories;
-        const ratio = newCalories / rec.targetCalories;
-        return {
-          ...rec,
-          actualCalories: newCalories,
-          delta,
-          proteinGrams: Math.round(macros.proteinGrams * ratio),
-          carbsGrams: Math.round(macros.carbsGrams * ratio),
-          fatGrams: Math.round(macros.fatGrams * ratio)
-        };
-      }
-      return rec;
-    }));
-  };
-
-  // Custom Recharts Area Tooltip
   const CustomAreaTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data: DailyCalorieRecord = payload[0].payload;
+      const data: DayHistoryRecord = payload[0].payload;
       const isDeficit = data.delta < 0;
       const isSurplus = data.delta > 0;
       const absDelta = Math.abs(data.delta);
@@ -164,44 +78,60 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
               <span className="font-extrabold text-stone-900 dark:text-zinc-100 text-sm">{data.dayName}</span>
               <div className="text-[10px] text-stone-400 dark:text-zinc-500 font-mono">{data.fullDate}</div>
             </div>
-            {data.photoVerified ? (
+            {data.actualCalories > 0 ? (
               <span className="text-[10px] text-[#2ECC71] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border border-emerald-100 dark:border-emerald-800">
-                <CheckCircle2 className="w-3 h-3" /> Verified
+                <CheckCircle2 className="w-3 h-3" /> Recorded
               </span>
             ) : (
-              <span className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md font-bold">
-                Logged
+              <span className="text-[10px] text-stone-500 dark:text-zinc-400 bg-stone-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md font-bold">
+                No record
               </span>
             )}
           </div>
 
           <div className="space-y-1.5 font-mono">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-stone-500 dark:text-zinc-400 font-sans">Actual Intake:</span>
+              <span className="text-stone-500 dark:text-zinc-400 font-sans">Consumed:</span>
               <strong className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                 {data.actualCalories.toLocaleString()} kcal
               </strong>
             </div>
 
             <div className="flex justify-between items-center text-xs">
-              <span className="text-stone-500 dark:text-zinc-400 font-sans">Mifflin Target:</span>
+              <span className="text-stone-500 dark:text-zinc-400 font-sans">Planned:</span>
+              <strong className="text-stone-700 dark:text-zinc-300">
+                {data.plannedCalories.toLocaleString()} kcal
+              </strong>
+            </div>
+
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-stone-500 dark:text-zinc-400 font-sans">Target:</span>
               <strong className="text-[#7A1C2C] dark:text-rose-400">
                 {data.targetCalories.toLocaleString()} kcal
               </strong>
             </div>
 
             <div className="flex justify-between items-center text-xs pt-1 border-t border-stone-100 dark:border-zinc-800">
-              <span className="text-stone-500 dark:text-zinc-400 font-sans">Daily Variance:</span>
+              <span className="text-stone-500 dark:text-zinc-400 font-sans">Against target:</span>
               <span className={`font-bold ${isDeficit ? 'text-blue-600 dark:text-blue-400' : isSurplus ? 'text-amber-600 dark:text-amber-400' : 'text-[#2ECC71]'}`}>
-                {isDeficit ? `-${absDelta} kcal (Deficit)` : isSurplus ? `+${absDelta} kcal (Surplus)` : '0 kcal (Dead On)'}
+                {data.actualCalories === 0
+                  ? 'nothing recorded'
+                  : isDeficit ? `-${absDelta} kcal (under)` : isSurplus ? `+${absDelta} kcal (over)` : '0 kcal (dead on)'}
               </span>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-stone-100 dark:border-zinc-800 flex items-center justify-between text-[11px] text-stone-500 dark:text-zinc-400 font-sans">
-            <span className="truncate">Protein Cycle:</span>
-            <span className="font-semibold text-stone-800 dark:text-zinc-200 truncate max-w-32">{data.proteinSource}</span>
-          </div>
+          {data.loggedEntries.length > 0 && (
+            <div className="pt-2 border-t border-stone-100 dark:border-zinc-800 space-y-1 text-[11px] text-stone-500 dark:text-zinc-400">
+              <span className="font-bold text-stone-600 dark:text-zinc-300">Logged by hand:</span>
+              {data.loggedEntries.map((entry, index) => (
+                <div key={`${entry.name}_${index}`} className="flex justify-between gap-3">
+                  <span className="truncate">{entry.name}</span>
+                  <span className="font-mono shrink-0">{entry.calories} kcal</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-1 pt-1 text-[10px] text-center font-mono">
             <div className="bg-stone-50 dark:bg-zinc-800 p-1 rounded">
@@ -231,19 +161,16 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-stone-400 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
               <History className="w-3.5 h-3.5 text-[#7A1C2C] dark:text-rose-400" />
-              7-Day Macro History & Energy Balance
-            </span>
-            <span className="text-stone-300 dark:text-zinc-700">·</span>
-            <span className="text-xs font-bold text-[#2ECC71] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-              Recharts AreaChart
+              7-Day Intake History
             </span>
           </div>
 
           <h3 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-zinc-100 tracking-tight mt-1">
-            Daily Calorie Intake vs Target Baseline
+            What You Actually Ate This Week
           </h3>
           <p className="text-xs text-stone-500 dark:text-zinc-400 mt-0.5">
-            Trailing 7-day adherence tracking calibrated against your Mifflin-St Jeor daily ceiling ({macros.targetCalories} kcal).
+            Snapped plates and hand-logged food against your {macros.targetCalories} kcal target. Days with nothing
+            recorded show as zero — snap a plate or log a bite to fill them in.
           </p>
         </div>
 
@@ -262,7 +189,7 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
             }`}
           >
             <Layers className="w-3.5 h-3.5 text-[#2ECC71]" />
-            <span>Smooth Area</span>
+            <span>Consumed</span>
           </button>
 
           <button
@@ -278,38 +205,44 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
             }`}
           >
             <Sliders className="w-3.5 h-3.5 text-[#7A1C2C] dark:text-rose-400" />
-            <span>Target Band</span>
+            <span>With target</span>
           </button>
         </div>
       </div>
 
       {/* 4 Summary Scorecards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        {/* 1. 7-Day Average */}
+        {/* 1. Average over days that have a record */}
         <div className="p-4 rounded-2xl bg-stone-50 dark:bg-zinc-850 border border-stone-200/80 dark:border-zinc-800 space-y-1">
           <span className="text-[10px] font-bold text-stone-400 dark:text-zinc-400 uppercase tracking-wider">
-            7-Day Calorie Average
+            Daily Average (recorded)
           </span>
           <div className="text-xl font-black text-stone-900 dark:text-zinc-100 font-mono">
             {averageActualCalories.toLocaleString()} <span className="text-xs font-normal text-stone-500">kcal/d</span>
           </div>
           <div className="text-[11px] text-stone-500 dark:text-zinc-400 flex items-center gap-1 font-mono">
-            <span>Target: {macros.targetCalories} kcal</span>
+            <span>{recordedDays.length} of 7 days recorded</span>
           </div>
         </div>
 
         {/* 2. Net Variance */}
         <div className="p-4 rounded-2xl bg-stone-50 dark:bg-zinc-850 border border-stone-200/80 dark:border-zinc-800 space-y-1">
           <span className="text-[10px] font-bold text-stone-400 dark:text-zinc-400 uppercase tracking-wider">
-            Average Delta
+            Average vs Target
           </span>
           <div className={`text-xl font-black font-mono flex items-center gap-1 ${
-            averageVariance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#2ECC71]'
+            recordedDays.length === 0
+              ? 'text-stone-400 dark:text-zinc-500'
+              : averageVariance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#2ECC71]'
           }`}>
-            {averageVariance > 0 ? `+${averageVariance}` : averageVariance} <span className="text-xs font-normal">kcal</span>
+            {recordedDays.length === 0
+              ? '—'
+              : `${averageVariance > 0 ? '+' : ''}${averageVariance} kcal`}
           </div>
           <div className="text-[11px] text-stone-500 dark:text-zinc-400 font-sans">
-            {profile.goal === 'lose_weight'
+            {recordedDays.length === 0
+              ? 'Snap or log something to start'
+              : profile.goal === 'lose_weight'
               ? (averageVariance <= 0 ? 'Optimal Deficit Maintained' : 'Slight Surplus Above Cut')
               : profile.goal === 'gain_muscle'
               ? (averageVariance >= 0 ? 'Growth Surplus Active' : 'Slight Under Target')
@@ -320,13 +253,17 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
         {/* 3. Goal Adherence */}
         <div className="p-4 rounded-2xl bg-stone-50 dark:bg-zinc-850 border border-stone-200/80 dark:border-zinc-800 space-y-1">
           <span className="text-[10px] font-bold text-stone-400 dark:text-zinc-400 uppercase tracking-wider">
-            7-Day Adherence
+            Adherence
           </span>
-          <div className="text-xl font-black text-[#2ECC71] font-mono">
-            {adherencePercent}%
+          <div className={`text-xl font-black font-mono ${
+            recordedDays.length === 0 ? 'text-stone-400 dark:text-zinc-500' : 'text-[#2ECC71]'
+          }`}>
+            {recordedDays.length === 0 ? '—' : `${adherencePercent}%`}
           </div>
           <div className="text-[11px] text-stone-500 dark:text-zinc-400">
-            {adherenceCount} of 7 days within ±5%
+            {recordedDays.length === 0
+              ? 'No recorded days yet'
+              : `${adherenceCount} of ${recordedDays.length} recorded days within ±5%`}
           </div>
         </div>
 
@@ -336,15 +273,19 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
             Weekly Range
           </span>
           <div className="text-base font-extrabold text-stone-800 dark:text-zinc-200 font-mono truncate">
-            {lowestDay.actualCalories} - {highestDay.actualCalories} <span className="text-xs font-normal">kcal</span>
+            {recordedDays.length === 0
+              ? '—'
+              : `${lowestDay.actualCalories} - ${highestDay.actualCalories} kcal`}
           </div>
           <div className="text-[11px] text-stone-500 dark:text-zinc-400 font-sans truncate">
-            Peak: {highestDay.dayName} · Low: {lowestDay.dayName}
+            {recordedDays.length === 0
+              ? 'Nothing recorded this week'
+              : `Peak: ${highestDay.dayName} · Low: ${lowestDay.dayName}`}
           </div>
         </div>
       </div>
 
-      {/* RECHARTS AREA CHART CONTAINER */}
+      {/* CHART CONTAINER */}
       <div className="w-full h-80 pt-2">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
@@ -352,13 +293,16 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
             margin={{ top: 15, right: 15, left: -10, bottom: 0 }}
           >
             <defs>
-              {/* Vibrant Emerald Gradient for Actual Calorie Intake */}
               <linearGradient id="calorieActualGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#2ECC71" stopOpacity={0.55} />
                 <stop offset="95%" stopColor="#2ECC71" stopOpacity={0.02} />
               </linearGradient>
 
-              {/* Deep Maroon Gradient for Target Calorie Ceiling */}
+              <linearGradient id="caloriePlannedGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#A8A29E" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#A8A29E" stopOpacity={0.02} />
+              </linearGradient>
+
               <linearGradient id="calorieTargetGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#7A1C2C" stopOpacity={0.25} />
                 <stop offset="95%" stopColor="#7A1C2C" stopOpacity={0.01} />
@@ -397,10 +341,23 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
               iconType="circle"
               wrapperStyle={{ paddingBottom: 15, fontSize: 12, fontWeight: 600 }}
               formatter={(value) => {
-                if (value === 'actualCalories') return <span className="text-stone-800 dark:text-zinc-200">Actual Intake (kcal)</span>;
-                if (value === 'targetCalories') return <span className="text-stone-800 dark:text-zinc-200">Mifflin Target ({macros.targetCalories} kcal)</span>;
+                if (value === 'actualCalories') return <span className="text-stone-800 dark:text-zinc-200">Consumed (kcal)</span>;
+                if (value === 'plannedCalories') return <span className="text-stone-800 dark:text-zinc-200">Planned (kcal)</span>;
+                if (value === 'targetCalories') return <span className="text-stone-800 dark:text-zinc-200">Target ({macros.targetCalories} kcal)</span>;
                 return value;
               }}
+            />
+
+            {/* What the plan put on the table */}
+            <Area
+              type="monotone"
+              dataKey="plannedCalories"
+              stroke="#A8A29E"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              fill="url(#caloriePlannedGradient)"
+              name="plannedCalories"
+              isAnimationActive={true}
             />
 
             {/* Target Baseline Reference Line */}
@@ -418,7 +375,7 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
               }}
             />
 
-            {/* Target Band Area */}
+            {/* Target band, only when asked for */}
             {chartView === 'comparison' && (
               <Area
                 type="monotone"
@@ -432,7 +389,7 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
               />
             )}
 
-            {/* Actual Daily Intake Area Curve */}
+            {/* What was actually eaten */}
             <Area
               type="monotone"
               dataKey="actualCalories"
@@ -453,22 +410,23 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
         </ResponsiveContainer>
       </div>
 
-      {/* 7-Day Interactive Day Breakdown Strip */}
+      {/* 7-Day Breakdown Strip */}
       <div className="pt-2 border-t border-stone-100 dark:border-zinc-800 space-y-3">
         <div className="flex items-center justify-between text-xs font-bold text-stone-700 dark:text-zinc-300">
           <span className="uppercase tracking-wider text-[11px] text-stone-500 dark:text-zinc-400">
-            Interactive Day Inspector & Simulated Intake Adjuster
+            Day by day
           </span>
           <span className="text-[11px] text-stone-400 dark:text-zinc-500 font-normal">
-            Click any day to inspect details or test variations
+            Click a day to see what was on it
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
           {historyData.map((day) => {
             const isSelected = selectedDayId === day.id;
-            const isOver = day.delta > (macros.targetCalories * 0.05);
+            const isOver = day.delta > macros.targetCalories * 0.05;
             const isUnder = day.delta < -(macros.targetCalories * 0.05);
+            const hasRecord = day.actualCalories > 0;
 
             return (
               <div
@@ -485,77 +443,101 @@ export const MacroHistory: React.FC<MacroHistoryProps> = ({ profile, macros }) =
               >
                 <div className="flex items-center justify-between font-bold text-stone-800 dark:text-zinc-200">
                   <span>{day.dayName}</span>
-                  {day.photoVerified ? (
-                    <span className="text-[10px] text-[#2ECC71]">📸</span>
-                  ) : (
-                    <span className="text-[10px] text-stone-400">📝</span>
-                  )}
+                  <span className="text-[10px]">
+                    {day.photoVerified ? '📸' : day.loggedEntries.length > 0 ? '📝' : '—'}
+                  </span>
                 </div>
 
                 <div className="text-sm font-extrabold font-mono mt-1 text-stone-900 dark:text-zinc-100">
-                  {day.actualCalories}
+                  {hasRecord ? day.actualCalories : '—'}
                 </div>
 
                 <div className={`text-[10px] font-mono mt-0.5 font-bold ${
-                  isOver ? 'text-amber-600 dark:text-amber-400' : isUnder ? 'text-blue-600 dark:text-blue-400' : 'text-[#2ECC71]'
+                  !hasRecord ? 'text-stone-400 dark:text-zinc-500' : isOver ? 'text-amber-600 dark:text-amber-400' : isUnder ? 'text-blue-600 dark:text-blue-400' : 'text-[#2ECC71]'
                 }`}>
-                  {day.delta > 0 ? `+${day.delta}` : day.delta === 0 ? '0' : day.delta} kcal
+                  {!hasRecord ? 'no record' : day.delta > 0 ? `+${day.delta} kcal` : `${day.delta} kcal`}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Selected Day Quick Adjustment Drawer */}
-        {selectedDayId && (
-          <div className="p-4 bg-stone-50 dark:bg-zinc-850/80 rounded-2xl border border-stone-200 dark:border-zinc-850 space-y-3 animate-in fade-in duration-200">
-            {(() => {
-              const activeRec = historyData.find(d => d.id === selectedDayId);
-              if (!activeRec) return null;
+        {/* Selected day detail — read only, built from what happened */}
+        {selectedDayId && (() => {
+          const activeRec = historyData.find((d) => d.id === selectedDayId);
+          if (!activeRec) return null;
+          const planDay = cycleDayForDate(activeRec.date, profile.planStartDate);
 
-              return (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-sm text-stone-900 dark:text-zinc-100">
-                        {activeRec.fullDate} ({activeRec.dayName})
-                      </h4>
-                      <p className="text-[11px] text-stone-500 dark:text-zinc-400">
-                        Protein Rotation: <strong>{activeRec.proteinSource}</strong> · Target: {macros.targetCalories} kcal
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedDayId(null)}
-                      className="text-xs text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200 font-bold"
-                    >
-                      Close
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-4 text-xs font-mono">
-                    <span className="text-stone-600 dark:text-zinc-400 font-sans shrink-0">
-                      Simulate / Adjust Calories:
-                    </span>
-                    <input
-                      type="range"
-                      min={Math.round(macros.targetCalories * 0.7)}
-                      max={Math.round(macros.targetCalories * 1.3)}
-                      step={25}
-                      value={activeRec.actualCalories}
-                      onChange={(e) => handleAdjustIntake(activeRec.id, Number(e.target.value))}
-                      className="w-full accent-[#2ECC71] cursor-pointer"
-                    />
-                    <span className="font-extrabold text-stone-900 dark:text-zinc-100 text-sm shrink-0 min-w-20 text-right">
-                      {activeRec.actualCalories} kcal
-                    </span>
-                  </div>
+          return (
+            <div className="p-4 bg-stone-50 dark:bg-zinc-850/80 rounded-2xl border border-stone-200 dark:border-zinc-850 space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-sm text-stone-900 dark:text-zinc-100">
+                    {activeRec.fullDate} ({activeRec.dayName})
+                  </h4>
+                  <p className="text-[11px] text-stone-500 dark:text-zinc-400">
+                    {planDay ? `Plan day ${planDay} of 28 · ` : 'Outside the plan · '}
+                    Target: {macros.targetCalories} kcal
+                  </p>
                 </div>
-              );
-            })()}
-          </div>
-        )}
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedDayId(null)}
+                  className="text-xs text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200 font-bold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="space-y-1.5 text-xs">
+                {activeRec.planPlates.length === 0 && activeRec.loggedEntries.length === 0 && (
+                  <p className="text-stone-500 dark:text-zinc-400">
+                    Nothing snapped and nothing logged on this day.
+                  </p>
+                )}
+
+                {activeRec.planPlates.map((plate, index) => (
+                  <div
+                    key={`${plate.title}_${index}`}
+                    className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800"
+                  >
+                    <span className="truncate text-stone-700 dark:text-zinc-300">
+                      <span className="text-stone-400 dark:text-zinc-500 mr-1.5">{typeLabel[plate.type] ?? plate.type}</span>
+                      {plate.title}
+                    </span>
+                    <span className="shrink-0 font-mono font-bold text-stone-900 dark:text-zinc-100">
+                      {plate.calories} kcal
+                      <span className={`ml-1.5 text-[10px] font-bold ${plate.verified ? 'text-[#2ECC71]' : 'text-stone-400 dark:text-zinc-500'}`}>
+                        {plate.verified ? '✓ snapped' : 'not snapped'}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+
+                {activeRec.loggedEntries.map((entry, index) => (
+                  <div
+                    key={`${entry.name}_${index}`}
+                    className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800"
+                  >
+                    <span className="truncate text-stone-700 dark:text-zinc-300">
+                      <span className="text-stone-400 dark:text-zinc-500 mr-1.5">Logged</span>
+                      {entry.name}
+                    </span>
+                    <span className="shrink-0 font-mono font-bold text-[#2ECC71]">
+                      +{entry.calories} kcal
+                    </span>
+                  </div>
+                ))}
+
+                <div className="flex items-center justify-between px-3 pt-2 font-mono text-[11px] text-stone-500 dark:text-zinc-400">
+                  <span>Consumed {activeRec.actualCalories} · Planned {activeRec.plannedCalories}</span>
+                  <span className="font-bold text-stone-800 dark:text-zinc-200">Target {macros.targetCalories}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, MacroTargets, Meal, FreezerVaultItem, CountryInfo } from '../types';
+import { FoodLogEntry, sumFoodEntries, todayKey } from '../data/foodLog';
 import { MacroHistory } from './MacroHistory';
 import { WeeklyMacroChart } from './WeeklyMacroChart';
 import { PocketMoneyWallet } from './PocketMoneyWallet';
@@ -20,6 +21,7 @@ import {
   Store,
   Camera,
   Globe,
+  Plus,
   Sparkles,
   Award,
   CheckCircle2,
@@ -32,6 +34,11 @@ interface BodyStatisticsTabProps {
   profile: UserProfile;
   macros: MacroTargets;
   todaysMeals: Meal[];
+  /** The whole plan, so the week chart can show what each past day held. */
+  meals: Meal[];
+  /** Hand-logged off-plan food for the last seven days, keyed by YYYY-MM-DD. */
+  foodLogs: Record<string, FoodLogEntry[]>;
+  onOpenFoodLog: () => void;
   freezerVault: FreezerVaultItem[];
   country: CountryInfo;
   onOpenHandGuide: (meal: Meal | null) => void;
@@ -48,6 +55,9 @@ export const BodyStatisticsTab: React.FC<BodyStatisticsTabProps> = ({
   profile,
   macros,
   todaysMeals,
+  meals,
+  foodLogs,
+  onOpenFoodLog,
   freezerVault,
   country,
   onOpenHandGuide,
@@ -79,9 +89,14 @@ export const BodyStatisticsTab: React.FC<BodyStatisticsTabProps> = ({
   const afternoonMeal = todaysMeals.find(m => m.type === 'afternoon');
   const eveningMeal = todaysMeals.find(m => m.type === 'evening');
 
-  const consumedCalories = todaysMeals
-    .filter(m => m.photoVerified)
-    .reduce((sum, m) => sum + m.calories, 0);
+  // Eaten means eaten: snapped plan plates plus whatever was logged by hand,
+  // because someone who ate outside the plan was invisible here before.
+  const todayLog = foodLogs[todayKey()] ?? [];
+  const loggedCalories = sumFoodEntries(todayLog).calories;
+  const consumedCalories =
+    todaysMeals
+      .filter(m => m.photoVerified)
+      .reduce((sum, m) => sum + m.calories, 0) + loggedCalories;
 
   const plannedTotalCalories = todaysMeals.reduce((sum, m) => sum + m.calories, 0);
   const remainingAllowance = Math.max(0, macros.targetCalories - consumedCalories);
@@ -248,6 +263,17 @@ export const BodyStatisticsTab: React.FC<BodyStatisticsTabProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.playTap();
+                onOpenFoodLog();
+              }}
+              className="px-3.5 py-2 rounded-xl bg-[#2ECC71] hover:bg-[#27ae60] text-white text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Log Food
+            </button>
             <div className="text-right">
               <div className="text-xs text-stone-500 dark:text-zinc-400 font-mono">
                 Allowance Remaining
@@ -266,7 +292,8 @@ export const BodyStatisticsTab: React.FC<BodyStatisticsTabProps> = ({
               Consumed: <strong>{consumedCalories} kcal</strong> ({percentConsumed}%)
             </span>
             <span className="text-stone-500 dark:text-zinc-400">
-              Target: <strong>{macros.targetCalories} kcal</strong> (Planned: {plannedTotalCalories} kcal)
+              Target: <strong>{macros.targetCalories} kcal</strong> (Planned: {plannedTotalCalories} kcal
+              {loggedCalories > 0 ? ` · Logged: ${loggedCalories} kcal` : ''})
             </span>
           </div>
           <div className="w-full h-3 bg-stone-100 dark:bg-zinc-800 rounded-full overflow-hidden flex">
@@ -407,8 +434,8 @@ export const BodyStatisticsTab: React.FC<BodyStatisticsTabProps> = ({
 
       {/* Historical Interactive Calorie Trend & Macro Adherence Charts */}
       <div className="space-y-6">
-        <MacroHistory profile={profile} macros={macros} />
-        <WeeklyMacroChart profile={profile} macros={macros} />
+        <MacroHistory profile={profile} macros={macros} meals={meals} logsByDate={foodLogs} />
+        <WeeklyMacroChart profile={profile} macros={macros} meals={meals} logsByDate={foodLogs} />
       </div>
 
       {/* NUTRITION & BODY COMPANION ENGINES (Moved from Home screen to Body Statistics) */}
