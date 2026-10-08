@@ -89,7 +89,9 @@ type Soup = {
 const SOUP_SOURCES =
   'Ingredients taken from: AJOL/NJPPM review of traditional soups in Nigeria (a six-botanical survey); ' +
   'Piece Within Nigeria survey of twelve Nigerian soups with full methods; Google Arts and Culture, ' +
-  'Pan-Atlantic University; and Nsala/white soup method write-ups.';
+  'Pan-Atlantic University; Nsala/white soup method write-ups; and, for ogbono, the International Journal ' +
+  'of Food Engineering and Technology characterization of Irvingia gabonensis soup alongside the dika ' +
+  'kernel mix recipe in PMC and the Abubakar and Sopade formulation in Nigerian Food Journal.';
 
 /** Build one dish from a soup, a protein and a swallow. Macros are summed. */
 function build(
@@ -266,6 +268,31 @@ const SOUPS = {
       'Finely sliced okazi leaf cooked with palm oil, snail and crayfish until tender.',
     pot: [['Sliced Okazi Leaf', 200, 560, 6, 10, 2, 6, 'Vegetable Stalls'], SMOKED_FISH, CRAYFISH, PALM_OIL],
     cookTimeMinutes: 45
+  },
+  // The catalogue was missing ogbono entirely, so it only appeared through a
+  // single legacy fish plate that the sampler never reached. Ground dika kernel
+  // is an oil seed and draws when it meets hot stock, which is the whole point of
+  // the soup; the bitter leaf and okra behind it come from the same references as
+  // the draw.
+  ogbono: {
+    name: 'Ogbono Soup',
+    description:
+      'Ground ogbono seed, the African wild mango, melted into palm oil until it draws, then simmered with bitter leaf, dried fish and crayfish.',
+    pot: [
+      // 45g of ground seed is a person's share of a family pot, which is how the
+      // references above cook it — around 130g milled for a pot that feeds
+      // several. A full 75g per plate, plus the swallow, put both ogbono plates
+      // in the plan's top four, above nearly every other meal in the month.
+      ['Ground Ogbono Seed (Dika Kernel)', 45, 570, 4, 7, 13, 2, 'Market Stall'],
+      ['Bitter Leaf and Celosia', 120, 340, 4, 7, 1, 5, 'Vegetable Stalls'],
+      ['Chopped Okra', 60, 160, 2, 4, 0, 2, 'Vegetable Stalls'],
+      SMOKED_FISH,
+      CRAYFISH,
+      PALM_OIL,
+      LOCUST_BEAN,
+      ONION_PEPPER
+    ],
+    cookTimeMinutes: 55
   }
 } satisfies Record<string, Soup>;
 
@@ -458,7 +485,32 @@ const PLACEMENTS: Placement[] = [
   ['efoRiro', 'Bean Stew', 'Garri', 'breakfasts'],
   ['ofeMmiri', 'Boiled Egg', 'Semovita', 'breakfasts'],
   ['okazi', 'Custard', 'Semovita', 'breakfasts'],
-  ['ilaAlasepo', 'Boiled Egg', 'Eba', 'breakfasts']
+  ['ilaAlasepo', 'Boiled Egg', 'Eba', 'breakfasts'],
+
+  // Ogbono, spread across four proteins rather than left in the fish bucket
+  // alone. A soup sitting in one bucket meets it only on the days that protein
+  // comes round, which is how the one legacy ogbono plate went unserved.
+  ['ogbono', 'Beef', 'Eba', 'evenings'],
+  ['ogbono', 'Chicken', 'Pounded Yam', 'evenings'],
+  ['ogbono', 'Catfish', 'Fufu', 'evenings'],
+  ['ogbono', 'Turkey', 'Garri', 'evenings'],
+  ['ogbono', 'Goat Meat', 'Amala', 'afternoons'],
+  ['ogbono', 'Mackerel Whole', 'Semo', 'afternoons'],
+
+  // Three soups had a single evening plate each, and one plate in one protein
+  // bucket is enough for a later addition to shove it out of reach: adding the
+  // ogbono plates lengthened the beef bucket and pushed okoroenyeribe past the
+  // index the plan ever visits. A second evening place in a different bucket
+  // means losing one does not lose the soup.
+  ['ilaAlasepo', 'Chicken', 'Eba', 'evenings'],
+  ['fisherman', 'Prawns', 'Semo', 'evenings'],
+  ['abacha', 'Tilapia Fillet', 'Garri', 'evenings'],
+
+  // ...and a place in the afternoon slot, whose first draw of the month is
+  // always index zero. A soup in that slot is met on day one rather than
+  // waiting for a stride to land on it: Okoroenyeribe sat in the poultry and
+  // beef evenings and served nothing until it had an afternoon door too.
+  ['ilaAlasepo', 'Cowpea Stew', 'Amala', 'afternoons']
 ];
 
 const PREP: Record<string, string[]> = {
@@ -551,6 +603,12 @@ const PREP: Record<string, string[]> = {
     'Cook the smoked fish and crayfish with onion and pepper.',
     'Add palm oil and let the leaves soften in the oil.',
     'Season and serve with the swallow.'
+  ],
+  ogbono: [
+    'Mill the dried ogbono seed fine and mix it with the ground crayfish.',
+    'Fry the ground ogbono in palm oil over low heat until it smells toasted and runs smooth, not burned.',
+    'Add hot stock a little at a time, stirring until the soup draws and pulls on the spoon.',
+    'Drop in the dried fish and locust bean, season, and fold the okra and bitter leaf through at the end.'
   ]
 };
 
@@ -573,6 +631,52 @@ for (const [soupKey, protein, swallow, slot] of PLACEMENTS) {
   }
   seen.add(dish.title);
   built[slot][dish.proteinSourceType].push(dish);
+}
+
+/**
+ * Spread the soups within each bucket before handing it to the rotation.
+ *
+ * Placements are written soup by soup, so a bucket received them soup by soup:
+ * six ogbono plates, then six afang, then whatever was added last. A bucket is
+ * drawn about six times in a month, so a soup written at the end of one was
+ * never reached at all — Abacha and Ogbono held five and six placements between
+ * them and served nothing, and okoroenyeribe went missing the moment a later
+ * addition lengthened its bucket.
+ *
+ * Interleaving means the six draws a bucket gets are six different soups.
+ */
+const soupTypeOf = (title: string): string =>
+  Object.values(SOUPS).find((soup) => title.startsWith(soup.name))?.name ?? title;
+
+const interleaveTypes = (dishes: MealBlueprint[], startAt: number): MealBlueprint[] => {
+  const groups = new Map<string, MealBlueprint[]>();
+  for (const dish of dishes) {
+    const type = soupTypeOf(dish.title);
+    const group = groups.get(type);
+    if (group) group.push(dish);
+    else groups.set(type, [dish]);
+  }
+  // Rotate which type leads. Without this the type written first in PLACEMENTS
+  // leads every bucket it belongs to and the one written last trails all of
+  // them, and a soup can carry five placements and still sit past the sixth
+  // index a bucket ever draws. Leading different buckets means every type
+  // arrives in the front of something.
+  const queues = [...groups.values()];
+  const rotation = ((startAt % queues.length) + queues.length) % queues.length;
+  const ordered = queues.slice(rotation).concat(queues.slice(0, rotation));
+  const out: MealBlueprint[] = [];
+  while (ordered.some((q) => q.length > 0)) {
+    for (const queue of ordered) if (queue.length > 0) out.push(queue.shift()!);
+  }
+  return out;
+};
+
+let bucketNumber = 0;
+for (const slot of Object.keys(built) as Slot[]) {
+  for (const protein of Object.keys(built[slot]) as ProteinKey[]) {
+    built[slot][protein] = interleaveTypes(built[slot][protein], bucketNumber);
+    bucketNumber += 1;
+  }
 }
 
 /** The soup catalogue, already split by slot and rotation bucket. */

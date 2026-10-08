@@ -35,6 +35,11 @@ function pickFromPool(
   // much was researched and added, which is why a pool holding thirty soups kept
   // serving the same six non-soup plates. A coprime stride keeps the scan visiting
   // the whole pool, and still covers every index exactly once.
+  // A stride of two, not one near poolSize / 6. Walking a thirty-dish bucket in
+  // steps of five spread six visits evenly across it and stepped straight over the
+  // research at the front of the pool: Fisherman Soup and Abacha served nothing.
+  // Two keeps the scan moving through the woven head of the bucket, where the
+  // catalogue now sits.
   let stride = 2;
   while (gcd(stride, size) !== 1) stride += 1;
   const start = ((((day - 1 + offset) * stride) % size) + size) % size;
@@ -874,7 +879,12 @@ function mergeNigeriaPoolExtras(): void {
     for (const [protein, bucket] of Object.entries(pool)) {
       const existing = [...bucket];
       const added: MealBlueprint[] = [];
-      for (const source of [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS, NIGERIA_SOUP_CATALOGUE]) {
+      // The catalogue leads the added list, and therefore lands at index zero of
+      // the woven pool. An afternoon slot draws index zero on its first visit, so
+      // the first researched dish of each bucket is guaranteed to be served;
+      // written the other way round, the catalogue sat at the back and a soup
+      // could hold seven placements and still serve nothing.
+      for (const source of [NIGERIA_SOUP_CATALOGUE, NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS]) {
         for (const dish of source[slot][protein as ProteinKey] ?? []) {
           if (existing.some((e) => dishKey(e.title) === dishKey(dish.title))) continue;
           if (added.some((a) => dishKey(a.title) === dishKey(dish.title))) continue;
@@ -882,11 +892,29 @@ function mergeNigeriaPoolExtras(): void {
         }
       }
       if (added.length === 0) continue;
-      // Alternate old and new so any prefix of the pool contains both.
+      // Weave five of the new plates to one of the old, rather than alternating.
+      //
+      // A bucket is drawn about six times in a month and nothing controls which
+      // indices those draws land on: a stride of two takes every other one, a
+      // stride of three takes a third, and a twenty-four dish evening bucket ends
+      // up drawing 5, 10, 15, 20, 1, 6. Alternating put the researched dishes on
+      // one parity only, so the draws stepped cleanly over them — Abacha sat one
+      // place short of four different buckets and served nothing at all. At five
+      // to one, every one of those strides lands inside the new plates about five
+      // times out of six, and the old dishes still turn up often enough to break
+      // a month of soup.
       const woven: MealBlueprint[] = [];
-      for (let i = 0; i < Math.max(existing.length, added.length); i += 1) {
-        if (added[i]) woven.push(added[i]);
-        if (existing[i]) woven.push(existing[i]);
+      let nextAdded = 0;
+      let nextExisting = 0;
+      while (nextAdded < added.length || nextExisting < existing.length) {
+        for (let k = 0; k < 5 && nextAdded < added.length; k += 1) {
+          woven.push(added[nextAdded]);
+          nextAdded += 1;
+        }
+        if (nextExisting < existing.length) {
+          woven.push(existing[nextExisting]);
+          nextExisting += 1;
+        }
       }
       pool[protein as ProteinKey] = woven;
     }

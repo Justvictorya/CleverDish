@@ -76,8 +76,11 @@ import { soundFX } from './utils/sound';
 // same class of error in Nigeria: soups were being handed over with an egg roll
 // instead of a swallow. v7 gives Nigeria the soups it actually eats, and stops
 // the rotation from being unable to reach them. v8 stops the photograph picker
-// falling back to a plate of rice for every dish it did not recognise.
-const MEAL_PLAN_VERSION = 10;
+// falling back to a plate of rice for every dish it did not recognise. v9 picks
+// each dish's photograph from what is actually in the pot, and v10 ships five
+// more soup photographs to match it. v11 reshapes the rotation itself, because
+// the catalogue could hold a soup seven times over and still never serve it.
+const MEAL_PLAN_VERSION = 11;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',

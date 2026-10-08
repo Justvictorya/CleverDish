@@ -7,7 +7,10 @@ const ASSET_CACHE = 'cleverdish-assets-v1';
 // v4 drops the v3 asset cache. It held the previous bundle, whose resolver only
 // knew eight photographs, so returning users would have kept being served the
 // old mapping and the five new soup photographs would never appear.
-const CACHE_VERSION = 'v4';
+// v5 does the same for the rotation fix: the asset cache still holds the bundle
+// that walked the pool past the researched soups, and serving it would keep a
+// returning user's month on the old, narrower plan.
+const CACHE_VERSION = 'v5';
 const CURRENT_ASSET_CACHE = `${ASSET_CACHE}-${CACHE_VERSION}`;
 const MAX_CACHED_ASSETS = 60;
 

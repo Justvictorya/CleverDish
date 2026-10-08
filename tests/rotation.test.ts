@@ -12,7 +12,8 @@ import { readdirSync } from 'fs';
 import path from 'path';
 import { generate28DayPlan, getMealPhoto } from '../src/data/rotationPlans';
 import { COUNTRY_CUISINES, dishKey } from '../src/data/cuisineCatalog';
-import type { CountryCode, Meal, StaplePreference } from '../src/types';
+import { NIGERIA_SOUP_CATALOGUE } from '../src/data/nigeriaSoupCatalogue';
+import type { CountryCode, Meal, MealBlueprint, StaplePreference } from '../src/types';
 
 const EVERY_COUNTRY: CountryCode[] = ['NG', 'GH', 'KE', 'US', 'CA', 'UK'];
 const EVERY_PREFERENCE: StaplePreference[] = ['indigenous', 'continental', 'balanced'];
@@ -611,4 +612,52 @@ test('a dish nothing matches falls back to a photograph that exists', () => {
     url.endsWith('pounded_yam_egusi_1790641933918.jpg'),
     `Unmatched dishes should fall back to the Nigerian soup photograph, got ${url}`
   );
+});
+
+/** The soups a Nigerian user is supposed to meet over the month. */
+const SOUP_TYPES = [
+  'Afang',
+  'Edikang Ikong',
+  'Egusi',
+  'Ewedu',
+  'Banga',
+  'Efo Riro',
+  'Gbegiri',
+  'Ofe Owerri',
+  'Nsala',
+  'Fisherman',
+  'Efo Shoko',
+  'Waterleaf',
+  'Okoroenyeribe',
+  'Abacha',
+  'Okazi',
+  'Ogbono'
+];
+
+const catalogueDishes = (): MealBlueprint[] =>
+  Object.values(NIGERIA_SOUP_CATALOGUE).flatMap((slot) => Object.values(slot).flat());
+
+test('every soup is placed in more than one protein bucket', () => {
+  // A soup in one bucket meets it only on the days that protein comes round,
+  // which is how the single legacy ogbono plate went unserved for months. The
+  // plan draws six dishes from each bucket, so a soup needs several doors.
+  const dishes = catalogueDishes();
+  for (const type of SOUP_TYPES) {
+    const placed = dishes.filter((d) => d.title.toLowerCase().includes(type.toLowerCase()));
+    assert.ok(placed.length >= 3, `${type} has only ${placed.length} placements in the catalogue`);
+    const buckets = new Set(placed.map((d) => d.proteinSourceType));
+    assert.ok(buckets.size >= 2, `${type} sits in one bucket only (${[...buckets].join(', ')})`);
+  }
+});
+
+test('a Nigerian plan meets every soup in the catalogue', () => {
+  // The whole point of the catalogue: a month of Nigerian meals should run
+  // through all sixteen soups, not the handful that happen to sit at an index
+  // the sampler reaches. Okoroenyeribe failed this while carrying seven
+  // placements, because they were all in buckets the plan never looked at.
+  const plan = generate28DayPlan('NG', 'indigenous');
+  const absent = SOUP_TYPES.filter(
+    (type) => !plan.some((meal) => meal.title.toLowerCase().includes(type.toLowerCase()))
+  );
+  assert.deepEqual(absent, [], `soups absent from the 28-day plan: ${absent.join(', ')}`);
 });
