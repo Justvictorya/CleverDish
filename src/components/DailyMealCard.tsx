@@ -420,7 +420,7 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
           </div>
         )}
 
-        {/* CLEAN SLEEK LINK TO ORDER FROM VERIFIED VENDORS */}
+        {/* GET THIS FOOD — LEADS STRAIGHT TO THE MARKET PLACE */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl border border-amber-200/80 dark:border-amber-800/50 text-xs">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
@@ -428,10 +428,10 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
             </div>
             <div>
               <div className="font-extrabold text-stone-900 dark:text-zinc-100 text-xs">
-                Want to order this food or fresh ingredients?
+                Get this food
               </div>
               <div className="text-[11px] text-stone-500 dark:text-zinc-400">
-                Vetted hygiene & price stability partners in {country.name}
+                Order it ready-to-eat or buy the fresh ingredients from vetted partners in {country.name}
               </div>
             </div>
           </div>
@@ -450,7 +450,8 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
             }}
             className="px-3.5 py-2 bg-[#7A1C2C] hover:bg-[#631623] text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-transform active:scale-95"
           >
-            <span>Order from Verified Vendors</span>
+            <Store className="w-3.5 h-3.5 text-amber-200" />
+            <span>Go to Market Place</span>
             <ExternalLink className="w-3.5 h-3.5 text-amber-200" />
           </button>
         </div>

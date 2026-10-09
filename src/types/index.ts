@@ -57,6 +57,12 @@ export interface UserProfile {
    * treated as 'clean' so existing profiles land on the calm version.
    */
   experienceMode?: 'clean' | 'chef';
+  /**
+   * Sound effects. Off by default — the app never makes a noise the user did
+   * not ask for — and flipped by the speaker button in the navbar, so anyone
+   * can turn the tap and celebration sounds on or off regardless of mode.
+   */
+  soundEnabled?: boolean;
 }
 
 export interface CleverBadge {

@@ -14,7 +14,6 @@ import {
   Target,
   Swords,
   ChevronRight,
-  Calendar,
   Gift
 } from 'lucide-react';
 import { getChefTier, getNextTier, CHEF_TIERS, getDefaultChallenges } from '../utils/gamification';

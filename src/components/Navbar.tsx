@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { UserProfile } from '../types';
 import { COUNTRIES } from '../data/countries';
 import {
-  Flame,
   Wallet,
   Globe,
   Settings,
@@ -12,14 +11,13 @@ import {
   Crown,
   Database,
   Camera,
-  Calendar,
   Sun,
   Moon,
   ShoppingCart,
   Snowflake,
   Trophy,
-  Sparkles,
-  Bell
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { getChefTier } from '../utils/gamification';
 
@@ -28,13 +26,14 @@ interface NavbarProps {
   activeTab: 'today' | 'rotation' | 'analytics' | 'wallet' | 'vendors' | 'ledger';
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
+  soundEnabled?: boolean;
+  onToggleSound?: () => void;
   onSelectTab: (tab: 'today' | 'rotation' | 'analytics' | 'wallet' | 'vendors' | 'ledger') => void;
   onOpenOnboarding: () => void;
   onOpenTravelMode: () => void;
   onOpenCookbook: () => void;
   onOpenSendFoodHome: () => void;
   onOpenPro: () => void;
-  onOpenSql: () => void;
   onOpenPantryScanner: () => void;
   onOpenMarketRun?: () => void;
   onOpenFreezerVault?: () => void;
@@ -44,18 +43,26 @@ interface NavbarProps {
   freezerCount?: number;
 }
 
+const PRIMARY_TABS: { id: NavbarProps['activeTab']; label: string; emoji: string }[] = [
+  { id: 'today', label: 'Today', emoji: '🍽️' },
+  { id: 'rotation', label: 'Plan', emoji: '🗓️' },
+  { id: 'analytics', label: 'Progress', emoji: '📊' },
+  { id: 'wallet', label: 'Market', emoji: '👛' }
+];
+
 export const Navbar: React.FC<NavbarProps> = ({
   profile,
   activeTab,
   isDarkMode = false,
   onToggleDarkMode,
+  soundEnabled = false,
+  onToggleSound,
   onSelectTab,
   onOpenOnboarding,
   onOpenTravelMode,
   onOpenCookbook,
   onOpenSendFoodHome,
   onOpenPro,
-  onOpenSql,
   onOpenPantryScanner,
   onOpenMarketRun,
   onOpenFreezerVault,
@@ -64,18 +71,45 @@ export const Navbar: React.FC<NavbarProps> = ({
   remindersActive = false,
   freezerCount = 0
 }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
-  const dailyAllowance = Math.round(profile.monthlyBudget / 30);
   const currentXp = profile.xp ?? profile.cleverPoints ?? 380;
   const currentTier = getChefTier(currentXp);
+  const isChefMode = profile.experienceMode === 'chef';
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
+  // Runs a menu action and closes the menu in one motion.
+  const run = (fn?: () => void) => () => {
+    setMenuOpen(false);
+    fn?.();
+  };
+
+  const itemClass =
+    'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm font-semibold text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer';
 
   return (
     <header className="sticky top-0 z-40 bg-[#7A1C2C] text-white shadow-md select-none">
-      {/* Upper Brand Header */}
+      {/* Brand bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between border-b border-white/10">
-        {/* Brand Logo: CleverDish */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white text-[#7A1C2C] flex items-center justify-center font-black text-xl shadow-md relative overflow-hidden group">
+          <div className="w-10 h-10 rounded-2xl bg-white text-[#7A1C2C] flex items-center justify-center font-black text-xl shadow-md relative overflow-hidden">
             <span className="text-xl">🍲</span>
             <span className="absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full bg-[#2ECC71]" />
           </div>
@@ -90,6 +124,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   PRO
                 </span>
               )}
+              {isChefMode && (
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white/15 text-amber-200 px-1.5 py-0.5 rounded-md hidden sm:inline">
+                  Lv.{currentTier.level} {currentTier.badgeEmoji}
+                </span>
+              )}
             </div>
             <p className="text-[10px] text-white/75 font-mono hidden sm:block">
               Smart Nutrition · 28-Day Rotation · Local Market Budget Engine
@@ -97,240 +136,158 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Right metrics and tools */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Chef Level & Trophies Button (Chef mode only) */}
-          {onOpenAccomplishments && profile.experienceMode === 'chef' && (
-            <button
-              onClick={onOpenAccomplishments}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-400/10 hover:from-amber-500/30 hover:to-amber-400/20 rounded-xl border border-amber-300/30 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
-              title="Open Accomplishment & Trophy Room"
-            >
-              <Trophy className="w-4 h-4 text-amber-300" />
-              <span className="font-mono text-amber-200">
-                Lv.{currentTier.level} {currentTier.badgeEmoji}
-              </span>
-              <span className="text-[10px] text-white/70 font-mono hidden md:inline">
-                {currentXp} XP
-              </span>
-            </button>
-          )}
-
-          {/* Active Streak Flame Button */}
-          <div
-            onClick={onOpenAccomplishments}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-black/20 rounded-xl border border-white/10 text-xs font-bold cursor-pointer hover:bg-black/30 transition-colors"
-            title="Current Streak"
-          >
-            <Flame className="w-4 h-4 text-orange-400 fill-orange-400 animate-pulse" />
-            <span className="font-mono text-white">{profile.streak}d</span>
-          </div>
-
-          {/* Daily Pocket Money Quick Balance */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-black/20 rounded-xl border border-white/10 text-xs">
-            <Wallet className="w-3.5 h-3.5 text-[#2ECC71]" />
-            <span className="text-white/80 font-mono">
-              Cap: <strong className="text-white">{country.currencySymbol}{dailyAllowance.toLocaleString()}</strong>/d
-            </span>
-          </div>
-
-          {/* Country Selector / Travel Mode */}
+        {/* Single account control — everything else lives one tap in */}
+        <div className="relative" ref={menuRef}>
           <button
-            onClick={onOpenTravelMode}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 text-xs font-medium transition-colors"
-            title="Active Country / Travel Mode"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 bg-black/20 hover:bg-black/30 rounded-xl border border-white/10 text-xs font-bold transition-colors cursor-pointer"
+            title="Account & settings"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
           >
-            <span>{country.flag}</span>
-            <span className="font-mono hidden md:inline">{country.currency}</span>
+            <span className="text-base">{profile.avatar || '🧑‍🍳'}</span>
+            <span className="hidden lg:inline max-w-[90px] truncate">{profile.name || 'You'}</span>
+            {remindersActive && <span className="w-2 h-2 rounded-full bg-[#2ECC71]" title="Reminders on" />}
           </button>
 
-          {/* Pantry Scanner Camera Button */}
-          <button
-            onClick={onOpenPantryScanner}
-            className="px-2.5 py-1.5 bg-[#2ECC71] hover:bg-[#27ae60] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
-            title="Scan Pantry to Deduct Budget"
-          >
-            <Camera className="w-4 h-4" />
-            <span className="hidden md:inline">Scan Pantry</span>
-          </button>
-
-          {/* Dark Mode Toggle */}
-          {onToggleDarkMode && (
-            <button
-              onClick={onToggleDarkMode}
-              className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/90 hover:text-white transition-colors"
-              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 z-50 w-72 max-h-[80vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#18181B] text-stone-800 dark:text-zinc-100 shadow-2xl border border-stone-200 dark:border-zinc-800 p-3 space-y-3"
             >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-white" />}
-            </button>
-          )}
+              {/* Identity */}
+              <div className="flex items-center gap-3 px-1 pb-3 border-b border-stone-100 dark:border-zinc-800">
+                <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-zinc-800 flex items-center justify-center text-2xl">
+                  {profile.avatar || '🧑‍🍳'}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-sm truncate">{profile.name || 'Your kitchen'}</div>
+                  <div className="text-[11px] text-stone-500 dark:text-zinc-400 truncate">
+                    {country.flag} {country.name} · {profile.streak}d streak
+                  </div>
+                </div>
+              </div>
 
-          {/* Chef Avatar & Profile Button */}
-          <button
-            onClick={onOpenOnboarding}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-black/20 hover:bg-black/30 rounded-xl border border-white/10 text-xs font-bold transition-colors cursor-pointer"
-            title={`${profile.name} · ${profile.kitchenTitle || 'Clever Chef'}`}
-          >
-            <span className="text-sm">{profile.avatar || '🧑‍🍳'}</span>
-            <span className="text-white hidden lg:inline max-w-[90px] truncate">{profile.name}</span>
-          </button>
+              {/* Go to */}
+              <div className="space-y-0.5">
+                <MenuLabel>Go to</MenuLabel>
+                {onOpenMarketRun && (
+                  <button className={itemClass} onClick={run(onOpenMarketRun)} role="menuitem">
+                    <ShoppingCart className="w-4 h-4 text-amber-500" /> Market Run
+                  </button>
+                )}
+                <button className={itemClass} onClick={run(() => onSelectTab('vendors'))} role="menuitem">
+                  <Store className="w-4 h-4 text-[#2ECC71]" /> Market Place
+                </button>
+                <button className={itemClass} onClick={run(() => onSelectTab('ledger'))} role="menuitem">
+                  <Database className="w-4 h-4 text-cyan-500" /> Market Ledger
+                </button>
+                {onOpenFreezerVault && (
+                  <button className={itemClass} onClick={run(onOpenFreezerVault)} role="menuitem">
+                    <Snowflake className="w-4 h-4 text-cyan-400" /> Freezer Vault
+                    {freezerCount > 0 && (
+                      <span className="ml-auto text-[10px] font-mono bg-stone-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md">
+                        {freezerCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+                <button className={itemClass} onClick={run(onOpenCookbook)} role="menuitem">
+                  <BookOpen className="w-4 h-4 text-[#7A1C2C] dark:text-rose-400" /> Cookbook
+                </button>
+                <button className={itemClass} onClick={run(onOpenSendFoodHome)} role="menuitem">
+                  <HeartHandshake className="w-4 h-4 text-amber-500" /> Send Food Home
+                </button>
+              </div>
 
-          {/* Meal-time reminders */}
-          {onOpenReminders && (
-            <button
-              onClick={onOpenReminders}
-              className={`relative w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                remindersActive ? 'bg-white/25 text-white' : 'bg-white/10 hover:bg-white/20 text-white/90'
-              } hover:text-white`}
-              title={remindersActive ? 'Meal reminders are on' : 'Set meal reminders'}
-              aria-label="Meal reminders"
-            >
-              <Bell className="w-4 h-4" />
-              {remindersActive && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#2ECC71] border-2 border-[#7A1C2C]" />
+              {/* Settings */}
+              <div className="space-y-0.5 pt-2 border-t border-stone-100 dark:border-zinc-800">
+                <MenuLabel>Settings</MenuLabel>
+                <button className={itemClass} onClick={run(onOpenTravelMode)} role="menuitem">
+                  <Globe className="w-4 h-4 text-stone-400" /> Country &amp; Travel
+                </button>
+                {onOpenReminders && (
+                  <button className={itemClass} onClick={run(onOpenReminders)} role="menuitem">
+                    <span className="w-4 h-4 flex items-center justify-center text-stone-400">🔔</span> Meal Reminders
+                    {remindersActive && <span className="ml-auto text-[10px] font-bold text-[#2ECC71]">ON</span>}
+                  </button>
+                )}
+                <button className={itemClass} onClick={run(onOpenPantryScanner)} role="menuitem">
+                  <Camera className="w-4 h-4 text-[#2ECC71]" /> Scan Pantry
+                </button>
+                {onToggleSound && (
+                  <button className={itemClass} onClick={run(onToggleSound)} role="menuitem" aria-pressed={soundEnabled}>
+                    {soundEnabled ? <Volume2 className="w-4 h-4 text-[#2ECC71]" /> : <VolumeX className="w-4 h-4 text-stone-400" />}
+                    Sound effects
+                    <span className="ml-auto text-[10px] font-bold text-stone-400">{soundEnabled ? 'ON' : 'OFF'}</span>
+                  </button>
+                )}
+                {onToggleDarkMode && (
+                  <button className={itemClass} onClick={run(onToggleDarkMode)} role="menuitem">
+                    {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-stone-400" />}
+                    {isDarkMode ? 'Light mode' : 'Dark mode'}
+                  </button>
+                )}
+                <button className={itemClass} onClick={run(onOpenOnboarding)} role="menuitem">
+                  <Settings className="w-4 h-4 text-stone-400" /> Profile &amp; Goals
+                </button>
+              </div>
+
+              {/* Account / game — only when relevant */}
+              {(isChefMode || !profile.isPro) && (
+                <div className="space-y-0.5 pt-2 border-t border-stone-100 dark:border-zinc-800">
+                  {isChefMode && onOpenAccomplishments && (
+                    <button className={itemClass} onClick={run(onOpenAccomplishments)} role="menuitem">
+                      <Trophy className="w-4 h-4 text-amber-400" /> Trophy Room
+                    </button>
+                  )}
+                  {!profile.isPro && (
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-900 text-sm font-black transition-colors cursor-pointer"
+                      onClick={run(onOpenPro)}
+                      role="menuitem"
+                    >
+                      <Crown className="w-4 h-4" /> Get Pro
+                    </button>
+                  )}
+                </div>
               )}
-            </button>
-          )}
-
-          {/* Settings / Biometrics */}
-          <button
-            onClick={onOpenOnboarding}
-            className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/90 hover:text-white transition-colors"
-            title="Configure Biometrics & Budget Goals"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Primary Sub-Nav Bar (Clean typography & active indicators) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-none py-1.5 text-xs font-bold">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button
-            onClick={() => onSelectTab('today')}
-            className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'today'
-                ? 'bg-white text-[#7A1C2C] shadow-xs'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Today's Meals 🍽️
-          </button>
-
-          <button
-            onClick={() => onSelectTab('analytics')}
-            className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'analytics'
-                ? 'bg-white text-[#7A1C2C] shadow-xs'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Body Statistics & Calories 📊
-          </button>
-
-          <button
-            onClick={() => onSelectTab('vendors')}
-            className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'vendors'
-                ? 'bg-white text-[#7A1C2C] shadow-xs'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Verified Vendors 🛍️
-          </button>
-
-          <button
-            onClick={() => onSelectTab('rotation')}
-            className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'rotation'
-                ? 'bg-white text-[#7A1C2C] shadow-xs'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            28-Day Rotation 🗓️
-          </button>
-
-          <button
-            onClick={() => onSelectTab('wallet')}
-            className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'wallet'
-                ? 'bg-white text-[#7A1C2C] shadow-xs'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Pocket Wallet 👛
-          </button>
-
-          <button
-            onClick={() => onSelectTab('ledger')}
-            className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'ledger'
-                ? 'bg-white text-[#7A1C2C] shadow-xs'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Open-Market Ledger 🛒
-          </button>
-        </div>
-
-        {/* Global / V2 Feature Quick Links */}
-        <div className="hidden lg:flex items-center gap-2 text-white/80">
-          {onOpenMarketRun && (
-            <button
-              onClick={onOpenMarketRun}
-              className="hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold"
-            >
-              <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
-              <span>Market Run 🛒</span>
-            </button>
-          )}
-
-          {onOpenFreezerVault && (
-            <button
-              onClick={onOpenFreezerVault}
-              className="hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold"
-            >
-              <Snowflake className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Freezer Vault {freezerCount > 0 && `(${freezerCount})`}</span>
-            </button>
-          )}
-
-          <button
-            onClick={onOpenCookbook}
-            className="hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-[#2ECC71]" />
-            <span>Cookbook</span>
-          </button>
-
-          <button
-            onClick={onOpenSendFoodHome}
-            className="hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10"
-          >
-            <HeartHandshake className="w-3.5 h-3.5 text-amber-300" />
-            <span>Send Food Home</span>
-          </button>
-
-          <button
-            onClick={onOpenSql}
-            className="hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10 text-[11px] font-mono"
-            title="View V2 SQL persistence schema"
-          >
-            <Database className="w-3 h-3 text-cyan-300" />
-            <span>SQL V2</span>
-          </button>
-
-          {!profile.isPro && (
-            <button
-              onClick={onOpenPro}
-              className="bg-amber-400 hover:bg-amber-300 text-stone-900 px-2.5 py-1 rounded-lg text-xs font-black flex items-center gap-1 ml-2 transition-transform active:scale-95"
-            >
-              <Crown className="w-3.5 h-3.5" />
-              <span>Get Pro</span>
-            </button>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Primary navigation — four places, nothing else */}
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-none py-1.5 text-xs font-bold">
+        {PRIMARY_TABS.map((tab) => {
+          const active =
+            activeTab === tab.id ||
+            (tab.id === 'wallet' && (activeTab === 'ledger' || activeTab === 'vendors'));
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onSelectTab(tab.id)}
+              className={`px-3 sm:px-4 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                active ? 'bg-white text-[#7A1C2C] shadow-xs' : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <span className="mr-1">{tab.emoji}</span>
+              {tab.label}
+            </button>
+          );
+        })}
+        <div className="ml-auto hidden lg:flex items-center gap-2 pr-1 text-[11px] font-mono text-white/60">
+          <Wallet className="w-3.5 h-3.5 text-[#2ECC71]" />
+          {country.currencySymbol}
+          {Math.round((profile.monthlyBudget || 0) / 30).toLocaleString()}/day
+        </div>
+      </nav>
     </header>
   );
 };
+
+const MenuLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="px-2 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-zinc-500">
+    {children}
+  </div>
+);

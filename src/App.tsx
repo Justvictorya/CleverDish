@@ -20,10 +20,6 @@ import { getReminderStatus, syncReminderPreferences } from './utils/notification
 import { CookbookModal } from './components/CookbookModal';
 import { SendFoodHomeModal } from './components/SendFoodHomeModal';
 import { ProSubscriptionModal } from './components/ProSubscriptionModal';
-import { SqlSchemaModal } from './components/SqlSchemaModal';
-import { WeeklyMacroChart } from './components/WeeklyMacroChart';
-import { MacroHistory } from './components/MacroHistory';
-import { StreakMiniCard } from './components/StreakMiniCard';
 import { WeeklyMarketRunModal } from './components/WeeklyMarketRunModal';
 import { HandPortionGuideModal } from './components/HandPortionGuideModal';
 import { FridgeRescueModal } from './components/FridgeRescueModal';
@@ -116,7 +112,8 @@ const DEFAULT_PROFILE: UserProfile = {
   lastLoggedDate: null,
   cleverPoints: 150,
   hasOnboarded: false,
-  experienceMode: 'clean'
+  experienceMode: 'clean',
+  soundEnabled: false
 };
 
 export default function App() {
@@ -209,7 +206,6 @@ export default function App() {
   const [isCookbookOpen, setIsCookbookOpen] = useState(false);
   const [isSendFoodHomeOpen, setIsSendFoodHomeOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
-  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [isMarketRunOpen, setIsMarketRunOpen] = useState(false);
   const [isHandGuideOpen, setIsHandGuideOpen] = useState(false);
   const [handGuideMeal, setHandGuideMeal] = useState<Meal | null>(null);
@@ -231,14 +227,28 @@ export default function App() {
   // asked to play.
   const isChefMode = profile.experienceMode === 'chef';
 
+  // Sound is its own switch, not a side-effect of the mode: the speaker button
+  // in the navbar is the only thing that decides it, and it defaults to off.
+  const soundEnabled = profile.soundEnabled ?? false;
+
   useEffect(() => {
-    soundFX.setEnabled(isChefMode);
+    soundFX.setEnabled(soundEnabled);
+  }, [soundEnabled]);
+
+  useEffect(() => {
     setConfettiEnabled(isChefMode);
   }, [isChefMode]);
 
   const handleSetExperienceMode = (mode: 'clean' | 'chef') => {
     soundFX.playTap();
     setProfile(prev => ({ ...prev, experienceMode: mode }));
+  };
+
+  const handleToggleSound = () => {
+    const next = !(profile.soundEnabled ?? false);
+    soundFX.setEnabled(next);
+    if (next) soundFX.playTap(); // confirm the switch with the sound itself
+    setProfile(prev => ({ ...prev, soundEnabled: next }));
   };
 
   const handleOrderFromVendors = (meal: Meal) => {
@@ -683,7 +693,6 @@ export default function App() {
         onOpenCookbook={() => setIsCookbookOpen(true)}
         onOpenSendFoodHome={() => setIsSendFoodHomeOpen(true)}
         onOpenPro={() => setIsProModalOpen(true)}
-        onOpenSql={() => setIsSqlModalOpen(true)}
         onOpenPantryScanner={() => setIsPantryScannerOpen(true)}
         onOpenMarketRun={() => {
           completeQuestAction('market_view');
@@ -692,6 +701,8 @@ export default function App() {
         onOpenFreezerVault={() => setIsFreezerVaultOpen(true)}
         onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}
         freezerCount={freezerVault.reduce((acc, curr) => acc + curr.portionsRemaining, 0)}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
       />
 
       {/* Main Container */}
@@ -1088,10 +1099,10 @@ export default function App() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-xl font-black text-stone-900 dark:text-zinc-100">
-                  Verified Vendor Ecosystem ({country.name})
+                  Market Place ({country.name})
                 </h3>
                 <p className="text-xs text-stone-500 dark:text-zinc-400 mt-0.5">
-                  Curated tier of high-trust local restaurants and bulk food suppliers vetted for price stability and hygiene.
+                  Order it ready-to-eat or buy the fresh ingredients — a curated tier of high-trust local restaurants and bulk food suppliers vetted for price stability and hygiene.
                 </p>
               </div>
 
@@ -1219,10 +1230,6 @@ export default function App() {
             <button onClick={() => setProfile(p => ({ ...p, hasOnboarded: false }))} className="hover:text-stone-700 dark:hover:text-zinc-300 underline font-bold cursor-pointer">
               Restart Sign Up / Goal Setup
             </button>
-            <span>·</span>
-            <button onClick={() => setIsSqlModalOpen(true)} className="hover:text-stone-700 dark:hover:text-zinc-300 underline cursor-pointer">
-              SQL Ledger DDL
-            </button>
           </div>
         </div>
       </footer>
@@ -1323,11 +1330,6 @@ export default function App() {
         isOpen={isProModalOpen}
         onClose={() => setIsProModalOpen(false)}
         onUpgradePro={() => setProfile(p => ({ ...p, isPro: true }))}
-      />
-
-      <SqlSchemaModal
-        isOpen={isSqlModalOpen}
-        onClose={() => setIsSqlModalOpen(false)}
       />
 
       {/* 4 HIGH-IMPACT CULINARY & SOURCING MODALS */}
