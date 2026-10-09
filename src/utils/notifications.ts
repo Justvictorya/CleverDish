@@ -5,7 +5,7 @@
 // on denied permission, or on an unsupported browser, we simply report the
 // reason instead of throwing at the user.
 import { apiFetch } from './api';
-import type { CountryCode, StaplePreference } from '../types';
+import type { CountryCode, FitnessGoal, StaplePreference } from '../types';
 
 export type MealSlot = 'morning' | 'afternoon' | 'evening';
 
@@ -93,6 +93,7 @@ export async function enableReminders(
   options: {
     country: CountryCode;
     staplePreference: StaplePreference;
+    goal?: FitnessGoal;
     planStartDate?: string;
     times?: ReminderTimes;
   }
@@ -128,6 +129,7 @@ export async function enableReminders(
       timezone,
       country: options.country,
       staplePreference: options.staplePreference,
+      goal: options.goal,
       planStartDate: options.planStartDate,
       times: options.times
     })
@@ -165,7 +167,7 @@ export async function updateReminderTimes(userId: string, times: ReminderTimes):
 /** Keeps the server's copy aligned when the user changes country or preference. */
 export async function syncReminderPreferences(
   userId: string,
-  patch: { country?: CountryCode; staplePreference?: StaplePreference; planStartDate?: string }
+  patch: { country?: CountryCode; staplePreference?: StaplePreference; goal?: FitnessGoal; planStartDate?: string }
 ): Promise<void> {
   const res = await apiFetch(userId, '/api/notifications/preferences', {
     method: 'PATCH',

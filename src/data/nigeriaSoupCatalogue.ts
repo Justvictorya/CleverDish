@@ -62,7 +62,6 @@ const PROTEINS: Record<string, Part> = {
   Turkey: ['Stewed Turkey', 130, 1500, 28, 0, 10, 0, 'Poultry Counter'],
   'Chicken Gizzard': ['Peppered Chicken Gizzard', 120, 1300, 24, 0, 8, 0, 'Poultry Counter'],
   'Boiled Egg': ['Boiled Egg', 60, 130, 6, 1, 5, 0, 'Market Stall'],
-  'Custard': ['Egg Custard', 130, 400, 10, 9, 8, 0, 'Dairy Counter'],
   'Bean Stew': ['Bean and Tomato Stew', 170, 620, 11, 24, 8, 9, 'Grain Stall'],
   'Cowpea Stew': ['Cowpea Leaf Stew', 170, 600, 12, 20, 9, 9, 'Vegetable Stalls'],
   'Goat Meat': ['Goat Meat Pepper Soup', 130, 1900, 30, 3, 15, 0, 'Mushroom Market'],
@@ -145,7 +144,6 @@ const proteinBucket: Record<string, ProteinKey> = {
   Turkey: 'poultry',
   'Chicken Gizzard': 'poultry',
   'Boiled Egg': 'eggs_dairy',
-  Custard: 'eggs_dairy',
   'Bean Stew': 'legumes_plant',
   'Cowpea Stew': 'legumes_plant',
   'Goat Meat': 'beef_lean',
@@ -311,8 +309,6 @@ const PLACEMENTS: Placement[] = [
   ['edikangIkong', 'Goat Meat', 'Fufu', 'evenings'],
   ['edikangIkong', 'Tilapia Fillet', 'Kwacoco', 'afternoons'],
   ['edikangIkong', 'Turkey', 'Amala', 'evenings'],
-  ['edikangIkong', 'Boiled Egg', 'Garri', 'breakfasts'],
-  ['edikangIkong', 'Bean Stew', 'Semovita', 'breakfasts'],
 
   // Afang beyond the single chicken version that existed.
   ['afang', 'Assorted Cow Parts', 'Pounded Yam', 'evenings'],
@@ -328,7 +324,6 @@ const PLACEMENTS: Placement[] = [
   ['egusi', 'Shaki', 'Eba', 'evenings'],
   ['egusi', 'Prawns', 'Semo', 'afternoons'],
   ['egusi', 'Beef', 'Fufu', 'evenings'],
-  ['egusi', 'Custard', 'Garri', 'breakfasts'],
 
   // Ewedu, eaten with amala more than anything else.
   ['ewedu', 'Goat Meat', 'Amala', 'afternoons'],
@@ -336,7 +331,6 @@ const PLACEMENTS: Placement[] = [
   ['ewedu', 'Cow Skin', 'Amala', 'afternoons'],
   ['ewedu', 'Turkey', 'Amala', 'evenings'],
   ['ewedu', 'Snail', 'Amala', 'afternoons'],
-  ['ewedu', 'Cowpea Stew', 'Tuwo', 'breakfasts'],
 
   // Banga, eaten with cocoyam pudding.
   ['banga', 'Catfish', 'Kwacoco', 'afternoons'],
@@ -347,13 +341,11 @@ const PLACEMENTS: Placement[] = [
   ['efoRiro', 'Chicken', 'Fufu', 'evenings'],
   ['efoRiro', 'Goat Meat', 'Amala', 'afternoons'],
   ['efoRiro', 'Tilapia Fillet', 'Eba', 'afternoons'],
-  ['efoRiro', 'Boiled Egg', 'Semovita', 'breakfasts'],
 
   ['gbegiri', 'Goat Meat', 'Amala', 'afternoons'],
   ['gbegiri', 'Chicken', 'Eba', 'evenings'],
   ['gbegiri', 'Prawns', 'Pounded Yam', 'evenings'],
   ['gbegiri', 'Cow Skin', 'Fufu', 'evenings'],
-  ['gbegiri', 'Bean Stew', 'Amala', 'breakfasts'],
 
   ['ofeOwerri', 'Assorted Cow Parts', 'Fufu', 'evenings'],
   ['ofeOwerri', 'Snail', 'Eba', 'afternoons'],
@@ -370,7 +362,6 @@ const PLACEMENTS: Placement[] = [
 
   ['efoShoko', 'Chicken', 'Fufu', 'evenings'],
   ['efoShoko', 'Goat Meat', 'Amala', 'afternoons'],
-  ['efoShoko', 'Boiled Egg', 'Pounded Yam', 'breakfasts'],
 
   ['ofeMmiri', 'Chicken', 'Eba', 'evenings'],
   ['ofeMmiri', 'Tilapia Fillet', 'Amala', 'afternoons'],
@@ -397,35 +388,24 @@ const PLACEMENTS: Placement[] = [
   ['edikangIkong', 'Chicken Gizzard', 'Amala', 'afternoons'],
   ['edikangIkong', 'Mackerel Whole', 'Semovita', 'afternoons'],
   ['edikangIkong', 'Turkey', 'Semo', 'afternoons'],
-  ['edikangIkong', 'Custard', 'Pounded Yam', 'breakfasts'],
-  ['edikangIkong', 'Prawns', 'Garri', 'breakfasts'],
 
   ['afang', 'Chicken Gizzard', 'Amala', 'afternoons'],
   ['afang', 'Mackerel Whole', 'Semovita', 'afternoons'],
-  ['afang', 'Turkey', 'Garri', 'breakfasts'],
-  ['afang', 'Custard', 'Pounded Yam', 'breakfasts'],
 
   ['egusi', 'Turkey', 'Semovita', 'afternoons'],
   ['egusi', 'Chicken Gizzard', 'Pounded Yam', 'afternoons'],
   ['egusi', 'Mackerel Whole', 'Amala', 'afternoons'],
-  ['egusi', 'Boiled Egg', 'Pounded Yam', 'breakfasts'],
-  ['egusi', 'Cowpea Stew', 'Semo', 'breakfasts'],
 
   ['ewedu', 'Turkey', 'Semovita', 'afternoons'],
   ['ewedu', 'Chicken Gizzard', 'Pounded Yam', 'afternoons'],
   ['ewedu', 'Mackerel Whole', 'Semovita', 'afternoons'],
-  ['ewedu', 'Custard', 'Amala', 'breakfasts'],
-  ['ewedu', 'Boiled Egg', 'Garri', 'breakfasts'],
 
   ['efoRiro', 'Turkey', 'Semovita', 'afternoons'],
   ['efoRiro', 'Chicken Gizzard', 'Amala', 'afternoons'],
-  ['efoRiro', 'Mackerel Whole', 'Garri', 'breakfasts'],
-  ['efoRiro', 'Cowpea Stew', 'Pounded Yam', 'breakfasts'],
 
   ['gbegiri', 'Turkey', 'Pounded Yam', 'afternoons'],
   ['gbegiri', 'Chicken Gizzard', 'Semovita', 'afternoons'],
   ['gbegiri', 'Mackerel Whole', 'Amala', 'afternoons'],
-  ['gbegiri', 'Custard', 'Semovita', 'breakfasts'],
 
   ['banga', 'Turkey', 'Amala', 'afternoons'],
   ['banga', 'Chicken Gizzard', 'Kwacoco', 'afternoons'],
@@ -433,33 +413,25 @@ const PLACEMENTS: Placement[] = [
 
   ['efoShoko', 'Turkey', 'Semovita', 'afternoons'],
   ['efoShoko', 'Chicken Gizzard', 'Amala', 'afternoons'],
-  ['efoShoko', 'Cowpea Stew', 'Garri', 'breakfasts'],
 
   ['ofeMmiri', 'Turkey', 'Semovita', 'afternoons'],
   ['ofeMmiri', 'Chicken Gizzard', 'Pounded Yam', 'afternoons'],
-  ['ofeMmiri', 'Cowpea Stew', 'Amala', 'breakfasts'],
 
   ['ofeOwerri', 'Turkey', 'Eba', 'afternoons'],
   ['ofeOwerri', 'Chicken Gizzard', 'Fufu', 'afternoons'],
 
   ['nsala', 'Chicken Gizzard', 'Eba', 'afternoons'],
   ['nsala', 'Mackerel Whole', 'Semovita', 'afternoons'],
-  ['nsala', 'Boiled Egg', 'Pounded Yam', 'breakfasts'],
 
   ['fisherman', 'Chicken Gizzard', 'Amala', 'afternoons'],
-  ['fisherman', 'Custard', 'Eba', 'breakfasts'],
-  ['fisherman', 'Boiled Egg', 'Semovita', 'breakfasts'],
 
   ['okazi', 'Turkey', 'Semovita', 'afternoons'],
   ['okazi', 'Chicken Gizzard', 'Amala', 'afternoons'],
-  ['okazi', 'Cowpea Stew', 'Pounded Yam', 'breakfasts'],
 
   ['ilaAlasepo', 'Mackerel Whole', 'Semovita', 'afternoons'],
   ['ilaAlasepo', 'Chicken Gizzard', 'Amala', 'afternoons'],
-  ['ilaAlasepo', 'Custard', 'Pounded Yam', 'breakfasts'],
 
   ['abacha', 'Chicken Gizzard', 'Semovita', 'afternoons'],
-  ['abacha', 'Custard', 'Eba', 'breakfasts'],
 
   // Fish and legume buckets in the evening slot were also short.
   ['afang', 'Tilapia Fillet', 'Amala', 'evenings'],
@@ -482,10 +454,6 @@ const PLACEMENTS: Placement[] = [
   ['ofeMmiri', 'Cowpea Stew', 'Semovita', 'evenings'],
   ['okazi', 'Bean Stew', 'Pounded Yam', 'evenings'],
   ['gbegiri', 'Cowpea Stew', 'Fufu', 'afternoons'],
-  ['efoRiro', 'Bean Stew', 'Garri', 'breakfasts'],
-  ['ofeMmiri', 'Boiled Egg', 'Semovita', 'breakfasts'],
-  ['okazi', 'Custard', 'Semovita', 'breakfasts'],
-  ['ilaAlasepo', 'Boiled Egg', 'Eba', 'breakfasts'],
 
   // Ogbono, spread across four proteins rather than left in the fish bucket
   // alone. A soup sitting in one bucket meets it only on the days that protein

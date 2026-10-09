@@ -1,4 +1,4 @@
-import { Meal, MealBlueprint, CountryCode, StaplePreference } from '../types';
+import { Meal, MealBlueprint, CountryCode, StaplePreference, FitnessGoal } from '../types';
 import { COUNTRIES } from './countries';
 import { COUNTRY_CUISINES, dishKey, resolveCuisineSources } from './cuisineCatalog';
 import { NIGERIA_POOL_EXTRAS } from './nigeriaPoolsExtra';
@@ -879,12 +879,19 @@ function mergeNigeriaPoolExtras(): void {
     for (const [protein, bucket] of Object.entries(pool)) {
       const existing = [...bucket];
       const added: MealBlueprint[] = [];
+      // Breakfast is not a soup course. The soup catalogue and the soup-and-swallow
+      // pairs are lunch and dinner food, and weaving them into the morning pools is
+      // what put "Ewedu Soup with Custard and Amala" in front of someone at 7am.
+      // Mornings draw only from the actual breakfast pools.
+      const sources = slot === 'breakfasts'
+        ? [NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS]
+        : [NIGERIA_SOUP_CATALOGUE, NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS];
       // The catalogue leads the added list, and therefore lands at index zero of
       // the woven pool. An afternoon slot draws index zero on its first visit, so
       // the first researched dish of each bucket is guaranteed to be served;
       // written the other way round, the catalogue sat at the back and a soup
       // could hold seven placements and still serve nothing.
-      for (const source of [NIGERIA_SOUP_CATALOGUE, NIGERIA_POOL_EXTRAS, NIGERIA_AUTHENTIC_POOLS, NIGERIA_SWOWL_PAIRS]) {
+      for (const source of sources) {
         for (const dish of source[slot][protein as ProteinKey] ?? []) {
           if (existing.some((e) => dishKey(e.title) === dishKey(dish.title))) continue;
           if (added.some((a) => dishKey(a.title) === dishKey(dish.title))) continue;
@@ -1192,7 +1199,127 @@ function getFoodstuffSourcing(countryCode: CountryCode, ingredients: Array<{ nam
 }
 
 // Generates the deterministic 28-day rotational plan
-export function generate28DayPlan(countryCode: CountryCode, preference: StaplePreference): Meal[] {
+/**
+ * Goal-strict plans.
+ *
+ * Until now the plan was identical for every goal: only the calorie and macro
+ * targets moved, so a weight-loss user could be handed the same heavy
+ * soup-and-swallow plates as someone eating to gain. The user asked for the
+ * food itself to change, so the goal now reaches the generator on two levers.
+ *
+ *  1. Which dishes come round. Each protein bucket is ordered by how heavy the
+ *     plate is, so a cut draws from the lighter end of the rotation and a bulk
+ *     from the calorie-dense end. The same bucket still offers the same food,
+ *     it just leads with what suits the goal.
+ *
+ *  2. How big the plate is. The energy-dense parts of a dish — the swallow, the
+ *     rice and yam, the oil and the nuts — are portioned down for a cut and up
+ *     for a bulk, while protein is never cut and vegetables never shrink. That
+ *     is the difference between dieting and starving: fewer calories, not less
+ *     food and not less protein.
+ *
+ * 'maintain' is left exactly as it was, so the existing plan is unchanged for
+ * everyone who did not ask to lose or gain.
+ */
+type MacroClass = 'fat' | 'protein' | 'carb' | 'veg';
+
+const FAT_WORDS = /oil|butter|margarine|mayonnaise|\bcream\b|cheese|\bnuts?\b|peanut|groundnut|coconut|palm fruit/i;
+const PROTEIN_WORDS = /chicken|turkey|beef|goat|mutton|lamb|pork|fish|catfish|mackerel|tilapia|prawn|crab|periwinkle|snail|shrimp|seafood|\beggs?\b|bean|cowpea|soya|\bsoy\b|milk|yoghurt|yogurt|stockfish|crayfish|shaki|ponmo|cow skin|gizzard|\bmeat\b|sardine|titus|herring|salmon|tuna|liver|kidney|whey|tofu|offal|assorted/i;
+const CARB_WORDS = /yam|eba|fufu|amala|semo|semovita|garri|tuwo|pounded|\brice\b|potato|plantain|bread|ogi|\bpap\b|\boats?\b|corn|maize|millet|cassava|wheat|barley|spaghetti|pasta|noodle|flour|sugar|honey|\bbananas?\b|swallow|koko|akara|moin|moi-?moi|dumpling|kwacoco|semolina|macaroni/i;
+
+function classifyIngredient(name: string): MacroClass {
+  if (FAT_WORDS.test(name)) return 'fat';
+  if (PROTEIN_WORDS.test(name)) return 'protein';
+  if (CARB_WORDS.test(name)) return 'carb';
+  return 'veg';
+}
+
+/** How much of a class of food each goal eats, relative to a normal plate. */
+function portionFactor(goal: FitnessGoal, cls: MacroClass): number {
+  if (goal === 'lose_weight') {
+    if (cls === 'fat') return 0.5;
+    if (cls === 'carb') return 0.6;
+    if (cls === 'protein') return 1.0;
+    return 1.15;
+  }
+  if (goal === 'gain_muscle') {
+    if (cls === 'fat') return 1.05;
+    if (cls === 'carb') return 1.15;
+    if (cls === 'protein') return 1.15;
+    return 1.0;
+  }
+  return 1;
+}
+
+/**
+ * Rebuild a blueprint at the plate size the goal calls for, recomputing the
+ * meal's macros and calories from its own parts so the numbers still add up.
+ * 'maintain' returns the blueprint untouched, keeping the old plan byte for byte.
+ */
+function applyGoalPortions(blueprint: MealBlueprint, goal: FitnessGoal): MealBlueprint {
+  if (goal === 'maintain') return blueprint;
+
+  const ingredients = blueprint.ingredients.map((ing) => {
+    const k = portionFactor(goal, classifyIngredient(ing.name));
+    return {
+      ...ing,
+      gramWeight: Math.max(1, Math.round(ing.gramWeight * k)),
+      baseNGNCost: Math.max(1, Math.round(ing.baseNGNCost * k)),
+      protein: Math.round(ing.protein * k),
+      carbs: Math.round(ing.carbs * k),
+      fat: Math.round(ing.fat * k),
+      fiber: Math.round(ing.fiber * k)
+    };
+  });
+
+  const total = (field: 'protein' | 'carbs' | 'fat' | 'fiber') =>
+    ingredients.reduce((sum, i) => sum + i[field], 0);
+  const protein = total('protein');
+  const carbs = total('carbs');
+  const fat = total('fat');
+  const fiber = total('fiber');
+
+  return {
+    ...blueprint,
+    ingredients,
+    protein,
+    carbs,
+    fat,
+    fiber,
+    calories: Math.round(protein * 4 + carbs * 4 + fat * 9)
+  };
+}
+
+/**
+ * Order a protein bucket so the goal meets what suits it first. The lightest
+ * plates lead a cut, the heaviest lead a bulk, and maintain keeps the authored
+ * order. The rotation still walks the whole bucket, so a month does not lose
+ * variety — it just spends its lighter or denser days first.
+ */
+function orderPoolForGoal(pool: MealBlueprint[], goal: FitnessGoal): MealBlueprint[] {
+  if (goal === 'maintain') return pool;
+  const byWeight = [...pool].sort((a, b) => a.calories - b.calories);
+  return goal === 'lose_weight' ? byWeight : byWeight.reverse();
+}
+
+/** Same ordering, applied across every protein bucket a slot can draw from. */
+function orderSourceForGoal(
+  source: Record<ProteinKey, MealBlueprint[]>,
+  goal: FitnessGoal
+): Record<ProteinKey, MealBlueprint[]> {
+  if (goal === 'maintain') return source;
+  const ordered = {} as Record<ProteinKey, MealBlueprint[]>;
+  for (const key of Object.keys(source) as ProteinKey[]) {
+    ordered[key] = orderPoolForGoal(source[key] ?? [], goal);
+  }
+  return ordered;
+}
+
+export function generate28DayPlan(
+  countryCode: CountryCode,
+  preference: StaplePreference,
+  goal: FitnessGoal = 'maintain'
+): Meal[] {
   const country = COUNTRIES[countryCode] || COUNTRIES.NG;
   const currencyRateMultiplier = country.code === 'NG'
     ? 1
@@ -1274,28 +1401,33 @@ export function generate28DayPlan(countryCode: CountryCode, preference: StaplePr
     const afternoonProtein = proteinForSlot(day, 1);
     const eveningProtein = proteinForSlot(day, 2);
 
-    const morningPrototypes = morningSource[morningProtein];
-    const afternoonPrototypes = afternoonSource[afternoonProtein];
-    const eveningPrototypes = eveningSource[eveningProtein];
-
-    const morningProto = pickFromPool(
-      morningPrototypes,
-      visitNumber(0, morningProtein),
-      0,
-      new Set()
+    const morningProto = applyGoalPortions(
+      pickFromPool(
+        orderPoolForGoal(morningSource[morningProtein] ?? [], goal),
+        visitNumber(0, morningProtein),
+        0,
+        new Set()
+      ),
+      goal
     );
-    const afternoonProto = pickFromPool(
-      afternoonPrototypes,
-      visitNumber(1, afternoonProtein),
-      0,
-      new Set([morningProto.title])
+    const afternoonProto = applyGoalPortions(
+      pickFromPool(
+        orderPoolForGoal(afternoonSource[afternoonProtein] ?? [], goal),
+        visitNumber(1, afternoonProtein),
+        0,
+        new Set([morningProto.title])
+      ),
+      goal
     );
-    const eveningProto = pickDistinctFromSource(
-      eveningSource,
-      eveningProtein,
-      visitNumber(2, eveningProtein),
-      1,
-      new Set([morningProto.title, afternoonProto.title])
+    const eveningProto = applyGoalPortions(
+      pickDistinctFromSource(
+        orderSourceForGoal(eveningSource, goal),
+        eveningProtein,
+        visitNumber(2, eveningProtein),
+        1,
+        new Set([morningProto.title, afternoonProto.title])
+      ),
+      goal
     );
 
     // Convert costs to regional currency. Every non-Nigerian pool is written on

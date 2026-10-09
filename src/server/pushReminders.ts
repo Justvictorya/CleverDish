@@ -12,7 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import webpush from 'web-push';
-import type { CountryCode, StaplePreference } from '../types';
+import type { CountryCode, FitnessGoal, StaplePreference } from '../types';
 import { generate28DayPlan } from '../data/rotationPlans';
 
 export type MealSlot = 'morning' | 'afternoon' | 'evening';
@@ -34,6 +34,7 @@ interface PushSubscriptionRecord {
   timezone: string;
   country: CountryCode;
   staplePreference: StaplePreference;
+  goal?: FitnessGoal;
   planStartDate?: string;
   times: Record<MealSlot, string>;
   enabled: boolean;
@@ -145,6 +146,7 @@ export class ReminderService {
       timezone: string;
       country: CountryCode;
       staplePreference: StaplePreference;
+      goal?: FitnessGoal;
       planStartDate?: string;
       times?: unknown;
     }
@@ -156,6 +158,7 @@ export class ReminderService {
       timezone: data.timezone,
       country: data.country,
       staplePreference: data.staplePreference,
+      goal: data.goal || existing?.goal,
       planStartDate: data.planStartDate || existing?.planStartDate,
       times: this.normaliseTimes(data.times ?? existing?.times),
       enabled: true,
@@ -168,13 +171,14 @@ export class ReminderService {
   }
 
   /** Keep preferences in sync without re-registering the browser subscription. */
-  update(userId: string, patch: Partial<Pick<PushSubscriptionRecord, 'country' | 'staplePreference' | 'planStartDate' | 'times' | 'timezone' | 'enabled'>>): PushSubscriptionRecord | null {
+  update(userId: string, patch: Partial<Pick<PushSubscriptionRecord, 'country' | 'staplePreference' | 'goal' | 'planStartDate' | 'times' | 'timezone' | 'enabled'>>): PushSubscriptionRecord | null {
     const store = this.load();
     const record = store[userId];
     if (!record) return null;
     if (patch.timezone && this.isValidTimezone(patch.timezone)) record.timezone = patch.timezone;
     if (patch.country) record.country = patch.country;
     if (patch.staplePreference) record.staplePreference = patch.staplePreference;
+    if (patch.goal) record.goal = patch.goal;
     if (patch.planStartDate !== undefined) record.planStartDate = patch.planStartDate;
     if (patch.times) record.times = this.normaliseTimes(patch.times);
     if (typeof patch.enabled === 'boolean') record.enabled = patch.enabled;
@@ -219,7 +223,7 @@ export class ReminderService {
    */
   private mealFor(record: PushSubscriptionRecord, slot: MealSlot, now: Date): string | null {
     try {
-      const plan = generate28DayPlan(record.country, record.staplePreference);
+      const plan = generate28DayPlan(record.country, record.staplePreference, record.goal ?? 'maintain');
       const dayNumber = cycleDayFor(record.timezone, record.planStartDate, now);
       const meal = plan.find((m) => m.dayNumber === dayNumber && m.type === slot);
       return meal ? meal.title : null;

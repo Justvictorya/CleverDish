@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { ReminderService, DEFAULT_REMINDER_TIMES } from './src/server/pushReminders';
 import { COUNTRIES } from './src/data/countries';
-import type { CountryCode, StaplePreference } from './src/types';
+import type { CountryCode, FitnessGoal, StaplePreference } from './src/types';
 
 dotenv.config();
 
@@ -1021,7 +1021,7 @@ app.post('/api/notifications/subscribe', requireAuth, (req, res) => {
     return res.status(429).json({ error: 'Too many reminder updates. Please wait and try again.' });
   }
 
-  const { subscription, timezone, country, staplePreference, planStartDate, times } = req.body || {};
+  const { subscription, timezone, country, staplePreference, goal, planStartDate, times } = req.body || {};
 
   if (!subscription || typeof subscription.endpoint !== 'string' || !subscription.keys?.auth) {
     return res.status(400).json({ error: 'A valid push subscription is required.' });
@@ -1037,11 +1037,16 @@ app.post('/api/notifications/subscribe', requireAuth, (req, res) => {
     ? staplePreference
     : 'indigenous';
 
+  const fitnessGoal: FitnessGoal = ['lose_weight', 'maintain', 'gain_muscle'].includes(goal)
+    ? goal
+    : 'maintain';
+
   const record = reminders.subscribe((req as any).userId, {
     subscription,
     timezone,
     country: country as CountryCode,
     staplePreference: preference,
+    goal: fitnessGoal,
     planStartDate,
     times
   });

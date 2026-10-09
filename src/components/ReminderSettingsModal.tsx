@@ -79,6 +79,7 @@ export const ReminderSettingsModal: React.FC<ReminderSettingsModalProps> = ({
         const result = await enableReminders(profile.id, {
           country: profile.country,
           staplePreference: profile.staplePreference,
+          goal: profile.goal,
           planStartDate: profile.planStartDate,
           times
         });

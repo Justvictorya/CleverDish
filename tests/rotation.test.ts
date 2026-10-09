@@ -634,6 +634,51 @@ const SOUP_TYPES = [
   'Ogbono'
 ];
 
+test('no breakfast is a soup-and-swallow plate, on any goal', () => {
+  // The catalogue had been weaving soups into the morning pools to fill thin
+  // protein buckets, which served "Ewedu Soup with Custard and Amala" at
+  // breakfast. Soup and swallow is a lunch and dinner food.
+  const soup = /\bsoup\b/i;
+  for (const goal of ['lose_weight', 'maintain', 'gain_muscle'] as const) {
+    for (const meal of generate28DayPlan('NG', 'indigenous', goal)) {
+      if (meal.type !== 'morning') continue;
+      assert.ok(!soup.test(meal.title), `breakfast soup on ${goal}: "${meal.title}"`);
+    }
+  }
+});
+
+test('weight-loss and weight-gain plans are different food', () => {
+  const lose = generate28DayPlan('NG', 'indigenous', 'lose_weight');
+  const gain = generate28DayPlan('NG', 'indigenous', 'gain_muscle');
+  const maintain = generate28DayPlan('NG', 'indigenous', 'maintain');
+
+  const total = (plan: Meal[]) => plan.reduce((sum, m) => sum + m.calories, 0);
+  assert.ok(
+    total(gain) > total(maintain) && total(maintain) > total(lose),
+    `calories should climb with the goal: ${total(lose)} / ${total(maintain)} / ${total(gain)}`
+  );
+
+  const loseTitles = new Set(lose.map((m) => m.title));
+  const gainTitles = new Set(gain.map((m) => m.title));
+  const shared = [...loseTitles].filter((t) => gainTitles.has(t)).length;
+  assert.ok(
+    shared < loseTitles.size,
+    'a cut and a bulk served the exact same set of dishes'
+  );
+});
+
+test('a cut trims the carbs and fat but not the protein', () => {
+  const average = (plan: Meal[], field: 'protein' | 'carbs' | 'fat') =>
+    plan.reduce((sum, m) => sum + m[field], 0) / plan.length;
+  const lose = generate28DayPlan('NG', 'indigenous', 'lose_weight');
+  const gain = generate28DayPlan('NG', 'indigenous', 'gain_muscle');
+
+  // The definition of a sensible cut: fewer carbs and less fat, protein held.
+  assert.ok(average(lose, 'carbs') < average(gain, 'carbs'), 'a cut should carry fewer carbs');
+  assert.ok(average(lose, 'fat') < average(gain, 'fat'), 'a cut should carry less fat');
+  assert.ok(average(lose, 'protein') > 0, 'a cut must still feed protein');
+});
+
 const catalogueDishes = (): MealBlueprint[] =>
   Object.values(NIGERIA_SOUP_CATALOGUE).flatMap((slot) => Object.values(slot).flat());
 

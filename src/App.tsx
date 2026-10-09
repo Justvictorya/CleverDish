@@ -92,7 +92,7 @@ import { soundFX } from './utils/sound';
 // each dish's photograph from what is actually in the pot, and v10 ships five
 // more soup photographs to match it. v11 reshapes the rotation itself, because
 // the catalogue could hold a soup seven times over and still never serve it.
-const MEAL_PLAN_VERSION = 11;
+const MEAL_PLAN_VERSION = 12;
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local_chef',
@@ -156,18 +156,18 @@ export default function App() {
   // 28-day rotational meal plan state (guarantees morning, afternoon, evening for all 28 days)
   const [meals, setMeals] = useState<Meal[]>(() => {
     try {
-      const saved = localStorage.getItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}`));
+      const saved = localStorage.getItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}_${profile.goal}`));
       if (saved) {
         const parsed: Meal[] = JSON.parse(saved);
         if (parsed.length >= 84 && parsed.some(m => m.type === 'evening')) {
           return parsed;
         }
       }
-      const fresh = generate28DayPlan(profile.country, profile.staplePreference);
-      localStorage.setItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}`), JSON.stringify(fresh));
+      const fresh = generate28DayPlan(profile.country, profile.staplePreference, profile.goal);
+      localStorage.setItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}_${profile.goal}`), JSON.stringify(fresh));
       return fresh;
     } catch {
-      return generate28DayPlan(profile.country, profile.staplePreference);
+      return generate28DayPlan(profile.country, profile.staplePreference, profile.goal);
     }
   });
 
@@ -404,8 +404,8 @@ export default function App() {
 
   // Sync meals to localStorage
   useEffect(() => {
-    localStorage.setItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}`), JSON.stringify(meals));
-  }, [meals, profile.country, profile.staplePreference]);
+    localStorage.setItem(storageKey(`meals_v${MEAL_PLAN_VERSION}_${profile.country}_${profile.staplePreference}_${profile.goal}`), JSON.stringify(meals));
+  }, [meals, profile.country, profile.staplePreference, profile.goal]);
 
   // Reload the day's log when the profile changes and at midnight, so the
   // ledger never carries yesterday's entries into today.
@@ -455,7 +455,7 @@ export default function App() {
   const handleFinishSignUp = (newProfile: UserProfile) => {
     const updated = { ...newProfile, hasOnboarded: true };
     setProfile(updated);
-    const refreshedMeals = generate28DayPlan(updated.country, updated.staplePreference);
+    const refreshedMeals = generate28DayPlan(updated.country, updated.staplePreference, updated.goal);
     setMeals(refreshedMeals);
     setSelectedDay(1);
     setActiveTab('today');
@@ -464,12 +464,19 @@ export default function App() {
     syncReminderPreferences(updated.id, {
       country: updated.country,
       staplePreference: updated.staplePreference,
+      goal: updated.goal,
       planStartDate: updated.planStartDate
     }).catch(() => { /* not subscribed yet, or offline — nothing to do */ });
   };
 
   const handleChangeGoal = (newGoal: FitnessGoal) => {
     setProfile(prev => ({ ...prev, goal: newGoal }));
+    // The plates themselves change with the goal, not just the macro targets, so
+    // the plan has to be rebuilt rather than leaving the old one on the screen.
+    const refreshedMeals = generate28DayPlan(profile.country, profile.staplePreference, newGoal);
+    setMeals(refreshedMeals);
+    // Reminders name today's dish, which changes with the goal.
+    syncReminderPreferences(profile.id, { goal: newGoal }).catch(() => { /* not subscribed yet, or offline */ });
   };
 
   const handleChangeBudget = (newBudget: number, newPeriod: 'day' | 'week' | 'month') => {
@@ -488,11 +495,11 @@ export default function App() {
       country: newCountry,
       travelModeActive: isTravelMode
     }));
-    const refreshedMeals = generate28DayPlan(newCountry, profile.staplePreference);
+    const refreshedMeals = generate28DayPlan(newCountry, profile.staplePreference, profile.goal);
     setMeals(refreshedMeals);
 
     // Reminders name today's dish, so they must follow the new country.
-    syncReminderPreferences(profile.id, { country: newCountry, planStartDate: profile.planStartDate })
+    syncReminderPreferences(profile.id, { country: newCountry, goal: profile.goal, planStartDate: profile.planStartDate })
       .catch(() => { /* not subscribed yet, or offline — nothing to do */ });
   };
 
