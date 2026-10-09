@@ -987,16 +987,16 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                       tag: 'Home Cooking'
                     },
                     {
-                      id: 'continental',
-                      title: '🌾 Continental Lean Staples',
-                      desc: 'Oats, Pasta, Sweet Potatoes, Quinoa, Chicken Breast. Clean western meal prep.',
-                      tag: 'Modern / Lean'
-                    },
-                    {
                       id: 'balanced',
                       title: '⚖️ Balanced Glocal Fusion (Recommended)',
                       desc: `Smart alternation: light modern mornings paired with hearty ${countryConfig.name} plates at home.`,
                       tag: 'Most Popular'
+                    },
+                    {
+                      id: 'continental',
+                      title: '🌾 Continental Lean Staples',
+                      desc: 'Oats, Pasta, Sweet Potatoes, Quinoa, Chicken Breast. Clean western meal prep.',
+                      tag: 'Modern / Lean'
                     }
                   ].map((s) => (
                     <div

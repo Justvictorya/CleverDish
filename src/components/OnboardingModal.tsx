@@ -323,6 +323,26 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
                 <button
                   type="button"
+                  onClick={() => setStaplePreference('balanced')}
+                  className={`w-full p-4 rounded-2xl border text-left transition-all ${
+                    staplePreference === 'balanced'
+                      ? 'border-[#7A1C2C] bg-[#7A1C2C]/5 shadow-sm'
+                      : 'border-stone-200 bg-white hover:border-stone-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-[#7A1C2C]">⚖️ Balanced Glocal Fusion</span>
+                    <span className="text-xs bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-md">
+                      Most Popular
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-600 mt-1">
+                    Alternating daily rotation: Continental breakfasts (oats, eggs) paired with hearty indigenous afternoon dinners.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setStaplePreference('continental')}
                   className={`w-full p-4 rounded-2xl border text-left transition-all ${
                     staplePreference === 'continental'
@@ -338,26 +358,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   </div>
                   <p className="text-xs text-stone-600 mt-1">
                     Rolled Oats, Whole Wheat Pasta, Russet Potatoes, Quinoa, Greek Yogurt, Chicken Breast, Salmon.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setStaplePreference('balanced')}
-                  className={`w-full p-4 rounded-2xl border text-left transition-all ${
-                    staplePreference === 'balanced'
-                      ? 'border-[#7A1C2C] bg-[#7A1C2C]/5 shadow-sm'
-                      : 'border-stone-200 bg-white hover:border-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-[#7A1C2C]">⚖️ Balanced Glocal Fusion</span>
-                    <span className="text-xs bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-md">
-                      Recommended
-                    </span>
-                  </div>
-                  <p className="text-xs text-stone-600 mt-1">
-                    Alternating daily rotation: Continental breakfasts (oats, eggs) paired with hearty indigenous afternoon dinners.
                   </p>
                 </button>
               </div>
