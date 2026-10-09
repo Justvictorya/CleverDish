@@ -99,8 +99,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right metrics and tools */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Chef Level & Trophies Button (Gamified Accomplishment Center) */}
-          {onOpenAccomplishments && (
+          {/* Chef Level & Trophies Button (Chef mode only) */}
+          {onOpenAccomplishments && profile.experienceMode === 'chef' && (
             <button
               onClick={onOpenAccomplishments}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-400/10 hover:from-amber-500/30 hover:to-amber-400/20 rounded-xl border border-amber-300/30 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"

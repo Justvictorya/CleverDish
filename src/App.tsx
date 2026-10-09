@@ -46,7 +46,7 @@ import { getDefaultDailyQuests, INITIAL_BADGES, getChefTier, getDefaultChallenge
 import { SignUpOnboardingFlow } from './components/SignUpOnboardingFlow';
 import { GoalAndBudgetBar } from './components/GoalAndBudgetBar';
 import { getTodaysCycleDay, getTimeUntilMidnight, formatCurrentDate } from './utils/calendarSync';
-import { fireMealStreakConfetti } from './utils/confetti';
+import { fireMealStreakConfetti, setConfettiEnabled } from './utils/confetti';
 import {
   Flame,
   Calendar,
@@ -115,7 +115,8 @@ const DEFAULT_PROFILE: UserProfile = {
   streak: 3,
   lastLoggedDate: null,
   cleverPoints: 150,
-  hasOnboarded: false
+  hasOnboarded: false,
+  experienceMode: 'clean'
 };
 
 export default function App() {
@@ -225,6 +226,21 @@ export default function App() {
   const [foodLog, setFoodLog] = useState<FoodLogEntry[]>(() => loadFoodLog(profile.id, todayKey()));
   const [isFoodLogOpen, setIsFoodLogOpen] = useState(false);
 
+  // Clean is the default experience; the game layer is opt-in. Sound and
+  // confetti follow the mode, so neither ever fires for someone who never
+  // asked to play.
+  const isChefMode = profile.experienceMode === 'chef';
+
+  useEffect(() => {
+    soundFX.setEnabled(isChefMode);
+    setConfettiEnabled(isChefMode);
+  }, [isChefMode]);
+
+  const handleSetExperienceMode = (mode: 'clean' | 'chef') => {
+    soundFX.playTap();
+    setProfile(prev => ({ ...prev, experienceMode: mode }));
+  };
+
   const handleOrderFromVendors = (meal: Meal) => {
     setSelectedVendorMeal(meal);
     setActiveTab('vendors');
@@ -263,9 +279,9 @@ export default function App() {
   const [challenges, setChallenges] = useState<CommunityChallenge[]>(() => {
     try {
       const saved = localStorage.getItem(`cleverdish_challenges_${profile.id}`);
-      return saved ? JSON.parse(saved) : getDefaultChallenges(profile.name, profile.country);
+      return saved ? JSON.parse(saved) : getDefaultChallenges();
     } catch {
-      return getDefaultChallenges(profile.name, profile.country);
+      return getDefaultChallenges();
     }
   });
 
@@ -274,11 +290,11 @@ export default function App() {
   }, [challenges, profile.id]);
 
   const handleJoinChallenge = (challengeId: string) => {
-    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isJoined: true, participantsCount: c.participantsCount + 1 } : c));
+    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isJoined: true } : c));
   };
 
   const handleLeaveChallenge = (challengeId: string) => {
-    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isJoined: false, participantsCount: Math.max(0, c.participantsCount - 1) } : c));
+    setChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, isJoined: false } : c));
   };
 
   const handleClaimChallengeReward = (challengeId: string) => {
@@ -820,22 +836,28 @@ export default function App() {
                         <Flame className="w-3.5 h-3.5 fill-amber-300 text-amber-300 animate-pulse" />
                         <span>{profile.streak}-Day Nutrition Streak</span>
                       </span>
-                      <button
-                        onClick={() => setIsAccomplishmentOpen(true)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/90 text-xs font-bold transition-colors cursor-pointer"
-                        title="View Trophy & Accomplishment Room"
-                      >
-                        <span>{chefTier.badgeEmoji} Rank {chefTier.level}: {chefTier.title}</span>
-                      </button>
+                      {isChefMode && (
+                        <button
+                          onClick={() => setIsAccomplishmentOpen(true)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/90 text-xs font-bold transition-colors cursor-pointer"
+                          title="View Trophy & Accomplishment Room"
+                        >
+                          <span>{chefTier.badgeEmoji} Rank {chefTier.level}: {chefTier.title}</span>
+                        </button>
+                      )}
                     </div>
 
                     <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
                       {allVerifiedToday
                         ? '🎉 All 3 Plates Authenticated Today!'
-                        : 'Snap Your Food to Authenticate & Keep Your Streak'}
+                        : isChefMode
+                        ? 'Snap Your Food to Authenticate & Keep Your Streak'
+                        : 'Snap your plates to count them'}
                     </h3>
                     <p className="text-xs text-white/80 max-w-xl">
-                      Take a photo of your food before eating. Photo verification authenticates your daily ritual, unlocks streak multipliers, and earns +50 Clever XP.
+                      {isChefMode
+                        ? 'Take a photo of your food before eating. Photo verification authenticates your daily ritual, unlocks streak multipliers, and earns +50 Clever XP.'
+                        : 'Take a photo of each plate before eating so it counts toward today’s total.'}
                     </p>
 
                     {/* Today's 3 Meals Ritual Progress */}
@@ -876,7 +898,7 @@ export default function App() {
                       className="px-6 py-3.5 rounded-2xl bg-[#2ECC71] hover:bg-[#27ae60] active:scale-95 text-white font-black text-sm shadow-lg shadow-[#2ECC71]/30 flex items-center justify-center gap-2 transition-all cursor-pointer group"
                     >
                       <Camera className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-                      <span>{allVerifiedToday ? '📸 Snap Another Photo' : '📸 Click to Snap Food & Unlock Streak'}</span>
+                      <span>{allVerifiedToday ? '📸 Snap Another Photo' : isChefMode ? '📸 Click to Snap Food & Unlock Streak' : '📸 Snap Food'}</span>
                     </button>
 
                     <div className="text-[11px] text-center text-white/60 font-mono">
@@ -1153,8 +1175,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Level Up Fanfare Floating Toast */}
-      {levelUpToast && (
+      {/* Level Up Fanfare Floating Toast — Chef mode only */}
+      {isChefMode && levelUpToast && (
         <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-top-4 duration-300">
           <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-stone-950 p-4 rounded-2xl shadow-2xl flex items-center gap-3.5 border-2 border-amber-300">
             <span className="text-3xl animate-bounce">👑</span>
@@ -1219,13 +1241,15 @@ export default function App() {
         />
       )}
 
-      <StreakCelebration
-        streak={profile.streak}
-        cleverPoints={profile.xp ?? profile.cleverPoints ?? 380}
-        isOpen={isCelebrationOpen}
-        onClose={() => setIsCelebrationOpen(false)}
-        onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}
-      />
+      {isChefMode && (
+        <StreakCelebration
+          streak={profile.streak}
+          cleverPoints={profile.xp ?? profile.cleverPoints ?? 380}
+          isOpen={isCelebrationOpen}
+          onClose={() => setIsCelebrationOpen(false)}
+          onOpenAccomplishments={() => setIsAccomplishmentOpen(true)}
+        />
+      )}
 
       <AccomplishmentCenterModal
         isOpen={isAccomplishmentOpen}
@@ -1234,6 +1258,9 @@ export default function App() {
         quests={dailyQuests}
         badges={badges}
         challenges={challenges}
+        experienceMode={profile.experienceMode ?? 'clean'}
+        onSetExperienceMode={handleSetExperienceMode}
+        todaysMeals={todaysMeals}
         onClaimQuest={handleClaimQuest}
         onJoinChallenge={handleJoinChallenge}
         onLeaveChallenge={handleLeaveChallenge}

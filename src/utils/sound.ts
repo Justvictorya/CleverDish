@@ -2,6 +2,16 @@
 
 class SoundFX {
   private ctx: AudioContext | null = null;
+  /**
+   * Silence unless the app is in Chef mode. A busy professional opening this
+   * at a desk does not want a chime on every tap, so the default is off and
+   * the game layer is what turns it on.
+   */
+  private enabled = false;
+
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+  }
 
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
@@ -18,6 +28,7 @@ class SoundFX {
   }
 
   playStreakCelebration() {
+    if (!this.enabled) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -48,6 +59,7 @@ class SoundFX {
   }
 
   playInflationSwap() {
+    if (!this.enabled) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -74,6 +86,7 @@ class SoundFX {
   }
 
   playTap() {
+    if (!this.enabled) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -100,6 +113,7 @@ class SoundFX {
   }
 
   playQuestComplete() {
+    if (!this.enabled) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -122,6 +136,7 @@ class SoundFX {
   }
 
   playLevelUp() {
+    if (!this.enabled) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -147,6 +162,7 @@ class SoundFX {
   }
 
   playBadgeUnlocked() {
+    if (!this.enabled) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;

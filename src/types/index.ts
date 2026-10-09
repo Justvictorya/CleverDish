@@ -50,6 +50,13 @@ export interface UserProfile {
   unlockedBadgeIds?: string[];
   hasOnboarded?: boolean;
   planStartDate?: string;
+  /**
+   * How the app presents itself. 'clean' (the default) is a quiet tool for
+   * people who want their numbers and their next meal; 'chef' turns on the
+   * XP, ranks, badges and quests for anyone who wants the game. Undefined is
+   * treated as 'clean' so existing profiles land on the calm version.
+   */
+  experienceMode?: 'clean' | 'chef';
 }
 
 export interface CleverBadge {
@@ -76,17 +83,6 @@ export interface DailyQuest {
   actionKey: 'log_meal' | 'photo_plate' | 'vault_stash' | 'market_view' | 'fridge_rescue' | 'hand_guide';
 }
 
-export interface LeaderboardEntry {
-  rank: number;
-  userName: string;
-  avatar: string;
-  country: CountryCode;
-  progressValue: number;
-  progressLabel: string;
-  scoreXp: number;
-  isCurrentUser?: boolean;
-}
-
 export interface CommunityChallenge {
   id: string;
   title: string;
@@ -101,8 +97,6 @@ export interface CommunityChallenge {
   isCompleted: boolean;
   rewardXp: number;
   rewardBadge: string;
-  participantsCount: number;
-  leaderboard: LeaderboardEntry[];
   deadlineDate?: string;
 }
 

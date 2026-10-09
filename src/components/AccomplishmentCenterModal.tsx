@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { UserProfile, CleverBadge, DailyQuest, CommunityChallenge, LeaderboardEntry } from '../types';
+import { UserProfile, CleverBadge, DailyQuest, CommunityChallenge, Meal } from '../types';
 import {
-  Trophy,
   X,
   Flame,
   Sparkles,
@@ -14,9 +13,7 @@ import {
   Zap,
   Target,
   Swords,
-  Users,
   ChevronRight,
-  Globe2,
   Calendar,
   Gift
 } from 'lucide-react';
@@ -31,6 +28,9 @@ interface AccomplishmentCenterModalProps {
   quests: DailyQuest[];
   badges: CleverBadge[];
   challenges?: CommunityChallenge[];
+  experienceMode?: 'clean' | 'chef';
+  onSetExperienceMode?: (mode: 'clean' | 'chef') => void;
+  todaysMeals?: Meal[];
   onClaimQuest: (questId: string) => void;
   onJoinChallenge?: (challengeId: string) => void;
   onLeaveChallenge?: (challengeId: string) => void;
@@ -45,6 +45,9 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
   quests,
   badges,
   challenges: initialChallenges,
+  experienceMode = 'clean',
+  onSetExperienceMode,
+  todaysMeals = [],
   onClaimQuest,
   onJoinChallenge,
   onLeaveChallenge,
@@ -57,16 +60,84 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
   const [challenges, setChallenges] = useState<CommunityChallenge[]>(() => {
     return initialChallenges && initialChallenges.length > 0
       ? initialChallenges
-      : getDefaultChallenges(profile.name, profile.country);
+      : getDefaultChallenges();
   });
 
   // Collapsible accordion states to keep the UI uncrowded
-  const [expandedLeaderboardId, setExpandedLeaderboardId] = useState<string | null>('challenge_meatless');
   const [expandedGuidelinesId, setExpandedGuidelinesId] = useState<string | null>(null);
   const [isPerksDrawerOpen, setIsPerksDrawerOpen] = useState(false);
-  const [leaderboardFilter, setLeaderboardFilter] = useState<'all' | 'country'>('all');
 
   if (!isOpen) return null;
+
+  // ── Clean mode ─────────────────────────────────────────────────────────
+  // No ranks, no XP, no leaderboards. Just the handful of numbers a person
+  // actually wants to see, plus a one-tap way into the game if they choose it.
+  if (experienceMode === 'clean') {
+    const verifiedToday = todaysMeals.filter(m => m.photoVerified).length;
+    const mealsToday = todaysMeals.length;
+    const daysOnPlan = (() => {
+      if (!profile.planStartDate) return null;
+      const [y, m, d] = profile.planStartDate.split('T')[0].split('-').map(Number);
+      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+      const start = Date.UTC(y, m - 1, d);
+      const now = new Date();
+      const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.max(0, Math.floor((today - start) / 86_400_000)) + 1;
+    })();
+
+    return (
+      <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+        <div className="bg-white dark:bg-[#18181B] rounded-3xl max-w-md w-full border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 pt-6 pb-4">
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white tracking-tight">Your Progress</h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="px-6 pb-6 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-4">
+                <div className="text-2xl font-black text-zinc-900 dark:text-white">{profile.streak}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 mt-1">Day streak</div>
+              </div>
+              <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-4">
+                <div className="text-2xl font-black text-zinc-900 dark:text-white">{daysOnPlan ?? '—'}</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 mt-1">Days on plan</div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-4">
+              <div className="text-2xl font-black text-zinc-900 dark:text-white">
+                {mealsToday > 0 ? `${verifiedToday}/${mealsToday}` : '—'}
+              </div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 mt-1">
+                Plates logged today
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed pt-1">
+              This is your quiet view — just the essentials. Want levels, badges and daily quests?
+              You can turn on the game whenever you like.
+            </p>
+
+            {onSetExperienceMode && (
+              <button
+                onClick={() => onSetExperienceMode('chef')}
+                className="w-full mt-1 py-3 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                Turn on Chef Mode
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const currentXp = profile.xp ?? profile.cleverPoints ?? 380;
   const currentTier = getChefTier(currentXp);
@@ -100,11 +171,7 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
             soundFX.playBadgeUnlocked();
             fireMealStreakConfetti();
           }
-          return {
-            ...c,
-            isJoined: nextJoined,
-            participantsCount: nextJoined ? c.participantsCount + 1 : c.participantsCount - 1
-          };
+          return { ...c, isJoined: nextJoined };
         }
         return c;
       })
@@ -320,36 +387,39 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
           <div className="px-6 py-4 border-b border-stone-100 dark:border-zinc-800 flex items-center justify-between bg-stone-50/50 dark:bg-zinc-900/30">
             <div>
               <h3 className="font-black text-base sm:text-lg text-stone-900 dark:text-zinc-100 flex items-center gap-2">
-                {activeTab === 'challenges' && (
-                  <>
-                    <span>Community Nutritional Challenges</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-[#2ECC71] border border-emerald-200 dark:border-emerald-800 font-mono">
-                      Global Live
-                    </span>
-                  </>
-                )}
+                {activeTab === 'challenges' && 'Personal Challenges'}
                 {activeTab === 'quests' && 'Daily Habit Quests'}
                 {activeTab === 'trophies' && 'Trophy & Accomplishment Cabinet'}
                 {activeTab === 'tiers' && 'Chef Mastery Tier Ladder'}
               </h3>
               <p className="text-xs text-stone-500 dark:text-zinc-400">
-                {activeTab === 'challenges' && 'Join group habits, climb worldwide leaderboards, and lock in milestone XP.'}
+                {activeTab === 'challenges' && 'Join group habits, stay consistent, and lock in milestone XP.'}
                 {activeTab === 'quests' && 'Complete your 3 daily rituals to earn bonus streak multipliers and XP.'}
                 {activeTab === 'trophies' && 'Permanent badges unlocked through nutritional discipline and market savvy.'}
                 {activeTab === 'tiers' && 'Climb from Kitchen Scout to Sovereign Nutrition Legend.'}
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                soundFX.playTap();
-                onClose();
-              }}
-              className="w-8 h-8 rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-500 hover:text-stone-900 dark:hover:text-zinc-100 flex items-center justify-center cursor-pointer transition-colors shrink-0 ml-2"
-              title="Close modal"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {onSetExperienceMode && (
+                <button
+                  onClick={() => onSetExperienceMode('clean')}
+                  className="hidden sm:inline text-[11px] font-bold text-stone-500 hover:text-stone-900 dark:hover:text-zinc-100 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-zinc-800 cursor-pointer transition-colors"
+                >
+                  Switch to Clean Mode
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  soundFX.playTap();
+                  onClose();
+                }}
+                className="w-8 h-8 rounded-full bg-stone-100 dark:bg-zinc-800 text-stone-500 hover:text-stone-900 dark:hover:text-zinc-100 flex items-center justify-center cursor-pointer transition-colors shrink-0"
+                title="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Canvas Scrollable Content Area */}
@@ -361,15 +431,9 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
             {activeTab === 'challenges' && (
               <div className="space-y-4 animate-in fade-in duration-200">
                 {challenges.map(challenge => {
-                  const isLeaderboardOpen = expandedLeaderboardId === challenge.id;
                   const isGuidelinesOpen = expandedGuidelinesId === challenge.id;
                   const progressPct = Math.min(100, Math.round((challenge.currentDays / challenge.durationDays) * 100));
                   const isReadyToClaim = challenge.isJoined && challenge.currentDays >= challenge.durationDays && !challenge.isCompleted;
-
-                  // Filter leaderboard
-                  const displayedLeaderboard = leaderboardFilter === 'country'
-                    ? challenge.leaderboard.filter(e => e.country === profile.country)
-                    : challenge.leaderboard;
 
                   return (
                     <div
@@ -454,38 +518,19 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
                         </div>
                       )}
 
-                      {/* Meta badges: Participants, Reward, Rules toggle, Leaderboard toggle */}
+                      {/* Meta badges: Reward & Guidelines toggle */}
                       <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-mono text-stone-500 dark:text-zinc-400 flex items-center gap-1 bg-white dark:bg-zinc-800 px-2.5 py-1 rounded-lg border border-stone-200 dark:border-zinc-750">
-                            <Users className="w-3 h-3 text-stone-400" />
-                            <span>{challenge.participantsCount.toLocaleString()} chefs enrolled</span>
-                          </span>
+                        <span className="text-[11px] font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
+                          Reward: +{challenge.rewardXp} XP · {challenge.rewardBadge}
+                        </span>
 
-                          <span className="text-[11px] font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
-                            Reward: +{challenge.rewardXp} XP · {challenge.rewardBadge}
-                          </span>
-                        </div>
-
-                        {/* Collapsible Action Toggles */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setExpandedGuidelinesId(isGuidelinesOpen ? null : challenge.id)}
-                            className="text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 flex items-center gap-1 text-[11px] font-bold cursor-pointer transition-colors"
-                          >
-                            <span>Guidelines</span>
-                            {isGuidelinesOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                          </button>
-
-                          <button
-                            onClick={() => setExpandedLeaderboardId(isLeaderboardOpen ? null : challenge.id)}
-                            className="px-2.5 py-1 bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 text-stone-700 dark:text-zinc-200 rounded-lg flex items-center gap-1 text-[11px] font-bold cursor-pointer transition-colors"
-                          >
-                            <Globe2 className="w-3 h-3 text-[#2ECC71]" />
-                            <span>Leaderboard</span>
-                            {isLeaderboardOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => setExpandedGuidelinesId(isGuidelinesOpen ? null : challenge.id)}
+                          className="text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 flex items-center gap-1 text-[11px] font-bold cursor-pointer transition-colors"
+                        >
+                          <span>Guidelines</span>
+                          {isGuidelinesOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
                       </div>
 
                       {/* COLLAPSIBLE 1: GUIDELINES & NUTRITIONAL LOGIC */}
@@ -505,78 +550,6 @@ export const AccomplishmentCenterModal: React.FC<AccomplishmentCenterModalProps>
                               </li>
                             ))}
                           </ul>
-                        </div>
-                      )}
-
-                      {/* COLLAPSIBLE 2: GLOBAL LEADERBOARD */}
-                      {isLeaderboardOpen && (
-                        <div className="mt-3.5 p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 space-y-3 animate-in zoom-in-95 duration-150">
-                          <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-zinc-800">
-                            <div className="flex items-center gap-2">
-                              <Trophy className="w-4 h-4 text-amber-500" />
-                              <span className="font-extrabold text-xs text-stone-900 dark:text-zinc-100">
-                                Live Global Leaderboard
-                              </span>
-                            </div>
-
-                            {/* Filter by Worldwide vs Country */}
-                            <div className="flex items-center gap-1 text-[10px] font-bold font-mono">
-                              <button
-                                onClick={() => setLeaderboardFilter('all')}
-                                className={`px-2 py-0.5 rounded cursor-pointer ${
-                                  leaderboardFilter === 'all'
-                                    ? 'bg-[#7A1C2C] text-white'
-                                    : 'text-stone-500 hover:text-stone-800 dark:hover:text-zinc-200'
-                                }`}
-                              >
-                                Worldwide
-                              </button>
-                              <button
-                                onClick={() => setLeaderboardFilter('country')}
-                                className={`px-2 py-0.5 rounded cursor-pointer ${
-                                  leaderboardFilter === 'country'
-                                    ? 'bg-[#7A1C2C] text-white'
-                                    : 'text-stone-500 hover:text-stone-800 dark:hover:text-zinc-200'
-                                }`}
-                              >
-                                {profile.country} Only
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Leaderboard Entries List */}
-                          <div className="space-y-1.5 text-xs">
-                            {displayedLeaderboard.map(entry => (
-                              <div
-                                key={entry.rank}
-                                className={`p-2.5 rounded-xl flex items-center justify-between transition-colors ${
-                                  entry.isCurrentUser
-                                    ? 'bg-amber-500/10 border border-amber-400 text-stone-900 dark:text-zinc-100 font-bold'
-                                    : 'bg-stone-50 dark:bg-zinc-850/60 border border-stone-100 dark:border-zinc-800 text-stone-700 dark:text-zinc-300'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5">
-                                  <span className="w-5 text-center font-black font-mono text-[11px] text-stone-400">
-                                    {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
-                                  </span>
-                                  <span className="text-base">{entry.avatar}</span>
-                                  <div>
-                                    <div className="font-extrabold text-xs flex items-center gap-1.5">
-                                      <span>{entry.userName}</span>
-                                      <span className="text-[10px] font-mono text-stone-400">({entry.country})</span>
-                                    </div>
-                                    <div className="text-[10px] text-stone-400 font-mono">
-                                      {entry.progressLabel}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="font-mono font-bold text-right text-xs">
-                                  <span className="text-[#2ECC71]">+{entry.scoreXp} XP</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
                         </div>
                       )}
                     </div>

@@ -1,10 +1,22 @@
 import confetti from 'canvas-confetti';
 
 /**
+ * Confetti belongs to the game layer, so it is off unless the app is in Chef
+ * mode. A celebration burst on every logged meal is exactly the kind of thing
+ * that reads as a toy to someone using this as a serious tool.
+ */
+let confettiEnabled = false;
+
+export function setConfettiEnabled(enabled: boolean): void {
+  confettiEnabled = enabled;
+}
+
+/**
  * Fires subtle, brand-aligned confetti (Emerald Green, Gold Amber, and Deep Maroon)
  * to celebrate meal logging and photo authentication.
  */
 export function fireMealStreakConfetti(originX = 0.5, originY = 0.7) {
+  if (!confettiEnabled) return;
   try {
     // Wave 1: Tight center burst
     confetti({
