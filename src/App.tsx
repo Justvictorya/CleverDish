@@ -46,22 +46,11 @@ import { fireMealStreakConfetti, setConfettiEnabled } from './utils/confetti';
 import {
   Flame,
   Calendar,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Store,
   ChevronLeft,
   ChevronRight,
-  TrendingDown,
   Camera,
-  HeartHandshake,
   CheckCircle2,
   ExternalLink,
-  Award,
-  RefreshCw,
-  Utensils,
-  Clock,
-  ShoppingBag,
   Plus
 } from 'lucide-react';
 import { soundFX } from './utils/sound';
@@ -198,7 +187,7 @@ export default function App() {
   const [photoLockMeal, setPhotoLockMeal] = useState<Meal | null>(null);
   const [inflationSwapMeal, setInflationSwapMeal] = useState<Meal | null>(null);
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
-  const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+
   const [isPantryScannerOpen, setIsPantryScannerOpen] = useState(false);
   const [isTravelModeOpen, setIsTravelModeOpen] = useState(false);
   const [isReminderSettingsOpen, setIsReminderSettingsOpen] = useState(false);
@@ -1062,7 +1051,7 @@ export default function App() {
               setIsMarketRunOpen(true);
             }}
             onOpenFreezerVault={() => setIsFreezerVaultOpen(true)}
-            onOpenLedger={() => setIsLedgerOpen(true)}
+            onOpenLedger={() => setActiveTab('ledger')}
             onOpenPantryScanner={() => setIsPantryScannerOpen(true)}
             onOpenSendFoodHome={() => setIsSendFoodHomeOpen(true)}
             onOpenOnboarding={() => setProfile(p => ({ ...p, hasOnboarded: false }))}
@@ -1279,13 +1268,6 @@ export default function App() {
         onJoinChallenge={handleJoinChallenge}
         onLeaveChallenge={handleLeaveChallenge}
         onClaimChallengeReward={handleClaimChallengeReward}
-      />
-
-      <MarketLedgerModal
-        profile={profile}
-        isOpen={isLedgerOpen}
-        onClose={() => setIsLedgerOpen(false)}
-        onPointsAwarded={handleAwardFoodiePoints}
       />
 
       <PantryScannerModal
