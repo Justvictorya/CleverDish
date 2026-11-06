@@ -18,14 +18,14 @@ import {
   Store,
   Bookmark,
   Upload,
-  Zap,
   X,
   Maximize2,
   Share2,
   Hand,
   Snowflake,
   Refrigerator,
-  Utensils
+  Utensils,
+  MoreHorizontal
 } from 'lucide-react';
 import { soundFX } from '../utils/sound';
 import { apiFetch } from '../utils/api';
@@ -62,6 +62,7 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
   onOrderFromVendors
 }) => {
   const [showPrepSteps, setShowPrepSteps] = useState(true);
+  const [showMore, setShowMore] = useState(false);
   const [showAiVisual, setShowAiVisual] = useState(false);
   const [visualDetails, setVisualDetails] = useState<any | null>(null);
   const [isLoadingVisual, setIsLoadingVisual] = useState(false);
@@ -80,6 +81,7 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const country = COUNTRIES[profile.country] || COUNTRIES.NG;
+  const isChefMode = profile.experienceMode === 'chef';
   const isMorning = meal.type === 'morning';
   const isAfternoon = meal.type === 'afternoon';
   const isEvening = meal.type === 'evening';
@@ -172,13 +174,6 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
     }
   };
 
-  const handleInstantQuickMatch = () => {
-    const sample = isMorning
-      ? 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=600&q=80'
-      : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
-    processInlineVerification(sample);
-  };
-
   const processInlineVerification = (photoUrl: string) => {
     setIsVerifyingInline(true);
     soundFX.playTap();
@@ -230,65 +225,8 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
           </div>
         </div>
 
-        {/* Action Controls Bar */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* WhatsApp Share Button */}
-          <button
-            type="button"
-            onClick={() => {
-              soundFX.playTap();
-              shareMealToWhatsApp(meal, country);
-            }}
-            className="p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
-            title="Share Recipe & Market Buying List to WhatsApp"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Hand-Size Portion Guide Trigger */}
-          {onOpenHandPortion && (
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playTap();
-                onOpenHandPortion(meal);
-              }}
-              className="px-2.5 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-              title="View Hand-Size Portion Breakdown (Zero scale needed)"
-            >
-              <Hand className="w-3.5 h-3.5 text-amber-600" />
-              <span>Hand Guide 🖐️</span>
-            </button>
-          )}
-
-          {/* Fridge Rescue Trigger CTA */}
-          {onOpenFridgeRescue && (
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playTap();
-                onOpenFridgeRescue(meal);
-              }}
-              className="px-2.5 py-1.5 rounded-xl border border-stone-200 dark:border-zinc-700 bg-stone-50 dark:bg-zinc-800/80 hover:bg-stone-100 text-stone-700 dark:text-zinc-300 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-              title="Missing items? Generate an instant swap from what is in your fridge"
-            >
-              <Refrigerator className="w-3.5 h-3.5 text-[#2ECC71]" />
-              <span>Fridge Rescue 🔄</span>
-            </button>
-          )}
-
-          {/* Inflation Swap Trigger CTA */}
-          <button
-            type="button"
-            onClick={() => onOpenInflationSwap(meal)}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#7A1C2C] dark:text-rose-300 bg-[#7A1C2C]/5 dark:bg-[#7A1C2C]/20 hover:bg-[#7A1C2C]/10 border border-[#7A1C2C]/20 dark:border-[#7A1C2C]/40 flex items-center gap-1 transition-colors cursor-pointer"
-            title="Swap high inflation ingredient for cheaper macro equivalent"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-[#2ECC71]" />
-            <span>Inflation Swap</span>
-          </button>
-
-          {/* Favorite Bookmark Button */}
+        {/* Action bar: save is primary, everything else tucks into one menu */}
+        <div className="flex items-center gap-1.5">
           {onToggleFavorite && (
             <button
               type="button"
@@ -302,10 +240,106 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
                   : 'bg-stone-50 dark:bg-zinc-800/80 hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-500 dark:text-zinc-400 border-stone-200 dark:border-zinc-700'
               }`}
               title={isFavorite ? 'Saved in Cookbook' : 'Save to Cookbook'}
+              aria-label={isFavorite ? 'Saved in Cookbook' : 'Save to Cookbook'}
             >
-              <Bookmark className="w-3.5 h-3.5" fill={isFavorite ? 'currentColor' : 'none'} />
+              <Bookmark className="w-4 h-4" fill={isFavorite ? 'currentColor' : 'none'} />
             </button>
           )}
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.playTap();
+                setShowMore((v) => !v);
+              }}
+              className="p-2 rounded-xl border border-stone-200 dark:border-zinc-700 bg-stone-50 dark:bg-zinc-800/80 hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-600 dark:text-zinc-300 transition-colors cursor-pointer"
+              title="More actions"
+              aria-label="More meal actions"
+              aria-haspopup="menu"
+              aria-expanded={showMore}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {showMore && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setShowMore(false)} />
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 z-40 w-56 rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 shadow-2xl p-1.5 space-y-0.5"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMore(false);
+                      handleFetchAiVisual();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    {showAiVisual ? 'Hide plating notes' : 'AI plating notes'}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMore(false);
+                      soundFX.playTap();
+                      shareMealToWhatsApp(meal, country);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Share to WhatsApp
+                  </button>
+                  {onOpenHandPortion && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMore(false);
+                        soundFX.playTap();
+                        onOpenHandPortion(meal);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <Hand className="w-3.5 h-3.5 text-amber-600" />
+                      Hand-size portions
+                    </button>
+                  )}
+                  {onOpenFridgeRescue && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMore(false);
+                        soundFX.playTap();
+                        onOpenFridgeRescue(meal);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <Refrigerator className="w-3.5 h-3.5 text-[#2ECC71]" />
+                      Swap from my fridge
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMore(false);
+                      onOpenInflationSwap(meal);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-[#2ECC71]" />
+                    Cheaper ingredient swap
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -318,17 +352,8 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
           imageUrl={meal.imageUrl}
         />
 
-        {/* AI Visual Plating Representation Trigger */}
-        <div className="mt-2.5 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleFetchAiVisual}
-            className="text-xs font-bold text-[#7A1C2C] dark:text-rose-400 hover:text-[#631623] dark:hover:text-rose-300 flex items-center gap-1.5 cursor-pointer bg-stone-50 dark:bg-zinc-800/60 hover:bg-stone-100 dark:hover:bg-zinc-800 px-3 py-1.5 rounded-xl border border-stone-200/80 dark:border-zinc-700/80 transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#2ECC71]" />
-            <span>{showAiVisual ? 'Hide Plating Aesthetics' : 'AI Culinary Plating Representation ✨'}</span>
-          </button>
-
+        {/* Style label (AI plating notes live under the More menu) */}
+        <div className="mt-2.5 flex items-center justify-end">
           <span className="text-[11px] text-stone-400 dark:text-zinc-500 font-mono">
             {meal.style === 'indigenous' ? '🇳🇬 Authentic Local' : '🌾 Continental'}
           </span>
@@ -624,13 +649,13 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
               <div className="py-4 text-center space-y-2">
                 <span className="inline-block w-6 h-6 border-2 border-[#2ECC71] border-t-transparent rounded-full animate-spin" />
                 <div className="text-xs font-bold text-stone-800 dark:text-zinc-200">
-                  AI Authenticating Plate & Macros...
+                  Saving your plate...
                 </div>
               </div>
             ) : (
               /* Compact Snap Actions */
               <div className="space-y-2.5">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {/* Action 1: Camera */}
                   <button
                     type="button"
@@ -651,16 +676,6 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
                     <span>Upload</span>
                   </button>
 
-                  {/* Action 3: Quick Test */}
-                  <button
-                    type="button"
-                    onClick={handleInstantQuickMatch}
-                    className="p-2.5 bg-[#7A1C2C]/5 dark:bg-[#7A1C2C]/20 hover:bg-[#7A1C2C]/10 border border-[#7A1C2C]/20 text-[#7A1C2C] dark:text-rose-400 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Zap className="w-4 h-4 text-amber-500" />
-                    <span>Instant Match</span>
-                  </button>
-
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -671,7 +686,7 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] text-stone-500 dark:text-zinc-400 pt-1">
-                  <span>Earns <strong>+50 Clever XP</strong></span>
+                  <span>{isChefMode ? <>Earns <strong>+50 Clever XP</strong></> : 'Log this meal to keep your streak'}</span>
                   <button
                     type="button"
                     onClick={() => onOpenPhotoLock(meal)}
@@ -694,21 +709,23 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
                 {meal.photoUrl && (
                   <img
                     src={meal.photoUrl}
-                    alt="Authenticated Plate"
+                    alt="Your plate"
                     className="w-8 h-8 rounded-lg object-cover border border-emerald-300 dark:border-emerald-700 shadow-2xs"
                   />
                 )}
                 <div>
                   <span className="inline-flex items-center gap-1 text-[#2ECC71] font-bold">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Plate Authenticated!
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {isChefMode ? 'Plate Authenticated!' : 'Logged today'}
                   </span>
-                  <div className="text-[10px] text-stone-400 font-mono">Streak unlocked · +25 pts</div>
+                  <div className="text-[10px] text-stone-400 font-mono">
+                    {isChefMode ? 'Streak unlocked · +25 pts' : 'Logged for today'}
+                  </div>
                 </div>
               </div>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-stone-500 dark:text-zinc-400">
                 <Lock className="w-3.5 h-3.5 text-stone-400 dark:text-zinc-500" />
-                <span>Streak Locked · Photo Required</span>
+                <span>{isChefMode ? 'Streak Locked · Photo Required' : 'Not logged yet'}</span>
               </span>
             )}
           </div>
@@ -724,7 +741,13 @@ export const DailyMealCard: React.FC<DailyMealCardProps> = ({
                 className="flex-1 sm:flex-none px-4 py-2 bg-stone-900 dark:bg-zinc-800 hover:bg-stone-800 dark:hover:bg-zinc-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
               >
                 <Camera className="w-4 h-4 text-[#2ECC71]" />
-                <span>{isInlineSnapOpen ? 'Close Camera' : 'Snap Food to Unlock Streak'}</span>
+                <span>
+                  {isInlineSnapOpen
+                    ? 'Close Camera'
+                    : isChefMode
+                    ? 'Snap Food to Unlock Streak'
+                    : 'Snap your plate'}
+                </span>
               </button>
             ) : (
               /* REWARDING GLOWING & CONFETTI-ENABLED 'I ATE THIS 🔥' BUTTON */
