@@ -169,25 +169,63 @@ CleverDish comes pre-configured with native currencies, staple foods, and market
 
 ## 🚀 Deployment
 
-CleverDish ships as a single Node service that serves both the API and the built SPA.
+CleverDish has two shapes. Pick the one that matches what you need.
 
-**Build command**
-```bash
-npm ci && npm run build
+### A. Static app — Cloudflare Pages (free, no card)
+
+The core product is client-side: planning, Today, food log, budget and progress all run in the
+browser, with data in `localStorage`. The optional extras (AI endpoints, push reminders, price
+ledger, server photo uploads) only exist when the Node server is running.
+
+```
+Build command:   npm ci && npm run build
+Output:          dist
 ```
 
-**Start command**
+- Dashboard: **Workers & Pages → Create → Pages → Connect to Git**, pick the repo, use the two
+  values above. Every push redeploys the same URL (e.g. `cleverdish.pages.dev`).
+- CLI: `npx wrangler pages deploy dist --project-name cleverdish`.
+
+Static hosting has no disk, so `server.ts` is not deployed — the app falls back to its local
+engines and everything user-made stays on their device.
+
+### B. Full service — Node + a persistent disk
+
 ```bash
+npm ci && npm run build
 npm start
 ```
 
-`npm start` runs the server in production mode, serving the compiled assets from `dist/`.
-A `render.yaml` and `railway.json` are included for one-click deploys.
+`npm start` serves both the API and `dist/`. A `render.yaml` and `railway.json` are included.
+Attach a disk and point `DATA_DIR` at it, otherwise auth tokens, push subscriptions, price
+samples and plate photos reset on every restart.
+
+### One-tap accounts (optional, free)
+
+The sign-up button is "Continue with Google". No password, no form: the ID token comes back with
+a verified email, and `functions/api/signup.ts` (a Cloudflare Pages Function) stores one row per
+person in D1. With no client id configured the button never renders and onboarding stays
+anonymous — nothing breaks.
+
+1. **Google Cloud Console** → APIs & Services → Credentials → *Create OAuth client ID* → Web
+   application. Add the deployed origin (and `http://localhost:5173`) under **Authorized
+   JavaScript origins**. No verification review is needed for `email`/`profile`.
+2. Set the client id at build time: `VITE_GOOGLE_CLIENT_ID=…` (see `.env.example`). It is public,
+   not a secret.
+3. Create the ledger and apply the schema:
+   ```bash
+   npx wrangler d1 create cleverdish-signups
+   npx wrangler d1 execute cleverdish-signups --remote --file=db/signup.sql
+   ```
+4. In the Pages project → Settings → Functions → add a **D1 binding** named `DB` pointing at that
+   database, plus a plain variable `GOOGLE_CLIENT_ID` with the same client id.
+5. Check the count any time: `curl https://<your-site>/api/signup` → `{"ok":true,"count":N,…}`.
 
 ### Environment variables
 
 | Variable | Required | Purpose |
 |---|---|---|
+| `VITE_GOOGLE_CLIENT_ID` | optional | Enables one-tap Google sign-in. Omit to stay anonymous-only. |
 | `GEMINI_API_KEY` | optional | Enables real Gemini output. Omit to use local fallback engines. |
 | `PORT` | no | HTTP port (default `3000`). |
 | `DATA_DIR` | recommended in production | Path for persisted price ledger, auth tokens and plate photos. Point at a mounted disk. |

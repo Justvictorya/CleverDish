@@ -63,6 +63,14 @@ export interface UserProfile {
    * can turn the tap and celebration sounds on or off regardless of mode.
    */
   soundEnabled?: boolean;
+  /**
+   * Verified email from a one-tap account. Optional: the app is usable
+   * anonymously, and the email is only here so the founder can count sign-ups
+   * and reach early users when the permanent domain lands.
+   */
+  email?: string;
+  /** Google's stable account id (`sub`), used to avoid counting twice. */
+  accountId?: string;
 }
 
 export interface CleverBadge {

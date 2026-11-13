@@ -23,6 +23,9 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { soundFX } from '../utils/sound';
+import { ContinueWithGoogle } from './ContinueWithGoogle';
+import { accountAvailable, getAccount } from '../utils/account';
+import type { AccountUser } from '../utils/account';
 
 interface SignUpOnboardingFlowProps {
   onComplete: (profile: UserProfile) => void;
@@ -80,6 +83,52 @@ export const CHEF_AVATARS = [
   },
 ];
 
+/**
+ * A monthly figure that is roughly sane in each market, used only by the
+ * "start now" shortcut. Everyone who walks the stages picks their own number.
+ */
+const QUICK_BUDGETS: Record<CountryCode, number> = {
+  NG: 90000,
+  US: 450,
+  UK: 350,
+  CA: 600,
+  GH: 1500,
+  KE: 25000
+};
+
+/**
+ * Best-effort home country for the shortcut. Timezone beats language: a phone
+ * in Lagos often reports `en-US`, but it reports `Africa/Lagos`.
+ */
+function guessCountry(): CountryCode {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (tz.includes('Lagos')) return 'NG';
+    if (tz.includes('Accra')) return 'GH';
+    if (tz.includes('Nairobi')) return 'KE';
+    if (tz.includes('London')) return 'UK';
+    if (tz.startsWith('America/')) {
+      return tz.includes('Toronto') || tz.includes('Vancouver') ? 'CA' : 'US';
+    }
+  } catch {
+    /* fall through to language */
+  }
+
+  try {
+    const langs = [navigator.language, ...(navigator.languages || [])].filter(Boolean).map((l) => l.toLowerCase());
+    if (langs.some((l) => l.endsWith('-ng') || l === 'ig' || l === 'yo' || l === 'ha' || l === 'pcm')) return 'NG';
+    if (langs.some((l) => l.endsWith('-gh'))) return 'GH';
+    if (langs.some((l) => l.endsWith('-ke') || l === 'sw')) return 'KE';
+    if (langs.some((l) => l.endsWith('-gb'))) return 'UK';
+    if (langs.some((l) => l.endsWith('-ca'))) return 'CA';
+    if (langs.some((l) => l.endsWith('-us'))) return 'US';
+  } catch {
+    /* default below */
+  }
+
+  return 'NG';
+}
+
 export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
   onComplete,
   initialProfile
@@ -87,6 +136,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
   // Session Mode: 'signup' (new induction) or 'signin' (returning quick login)
   const [sessionMode, setSessionMode] = useState<'signup' | 'signin'>('signup');
   const [loginIdentifier, setLoginIdentifier] = useState(initialProfile?.name || '');
+  const [account, setAccount] = useState<AccountUser | null>(() => getAccount());
 
   // Step state: 1: Identity/Avatar, 2: Goal/Biometrics, 3: Budget, 4: Staples & Crate, 5: Passport Reveal
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -145,7 +195,37 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
     avatar: selectedAvatar,
     kitchenTitle: CHEF_AVATARS.find(a => a.emoji === selectedAvatar)?.title || 'Pioneer Chef',
     hasOnboarded: true,
-    planStartDate: initialProfile?.planStartDate || new Date().toISOString()
+    planStartDate: initialProfile?.planStartDate || new Date().toISOString(),
+    email: account?.email || initialProfile?.email,
+    accountId: account?.sub || initialProfile?.accountId
+  };
+
+  /** One tap filled in the account; mirror it into the form the user sees. */
+  const handleAccount = (user: AccountUser) => {
+    setAccount(user);
+    if (!name.trim()) setName(user.name);
+    soundFX.playTap();
+  };
+
+  /**
+   * The "that's all" path: signed in, straight into Today on sensible defaults.
+   * Goal, budget and staples stay editable afterwards, so nothing is lost —
+   * it just does not stand between a curious visitor and the first meal.
+   */
+  const handleQuickStart = () => {
+    soundFX.playStreakCelebration();
+    const home = guessCountry();
+    const budget = QUICK_BUDGETS[home];
+    onComplete({
+      ...tempProfile,
+      country: home,
+      homeCountry: home,
+      currentCountry: home,
+      budgetPeriod: 'month',
+      budgetAmount: budget,
+      monthlyBudget: budget,
+      hasOnboarded: true
+    });
   };
 
   const macros = calculateMacros(tempProfile);
@@ -340,9 +420,20 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                 Welcome Back, Chef!
               </h3>
               <p className="text-xs text-stone-500 dark:text-zinc-400 max-w-sm mx-auto">
-                Sign in to sync your active habit streak, unlocked badges, and 28-day rotational meals.
+                Pick up where you left off — your streak, badges and 28-day plan are saved on this device.
               </p>
             </div>
+
+            {(accountAvailable() || account) && (
+              <div className="max-w-md mx-auto space-y-3">
+                <ContinueWithGoogle onAccount={handleAccount} />
+                <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-zinc-500">
+                  <span className="flex-1 h-px bg-stone-200 dark:bg-zinc-800" />
+                  or use the name on this device
+                  <span className="flex-1 h-px bg-stone-200 dark:bg-zinc-800" />
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleReturningLogin} className="space-y-4 max-w-md mx-auto">
               <div>
@@ -399,6 +490,33 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
                     Set up your chef profile in 3 simple taps to calibrate your 28-day rotational meals.
                   </p>
                 </div>
+
+                {/* ONE-TAP ACCOUNT: no password, no email field, just a verified address */}
+                {(accountAvailable() || account) && (
+                  <div className="rounded-2xl border border-stone-200 dark:border-zinc-700 bg-stone-50 dark:bg-zinc-900/50 p-3.5 space-y-2">
+                    <div>
+                      <div className="text-[11px] font-black uppercase tracking-wider text-stone-700 dark:text-zinc-200">
+                        Your account
+                      </div>
+                      <p className="text-[11px] text-stone-500 dark:text-zinc-400 leading-snug mt-0.5">
+                        {account
+                          ? 'Saved. No password, nothing else to fill in.'
+                          : 'One tap with Google — no password, no form. We keep your email so we can tell you when CleverDish gets its permanent home.'}
+                      </p>
+                    </div>
+                    <ContinueWithGoogle onAccount={handleAccount} />
+                    {account && (
+                      <button
+                        type="button"
+                        onClick={handleQuickStart}
+                        className="w-full pt-1 text-[11px] font-bold text-[#7A1C2C] dark:text-rose-400 hover:underline flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        Skip the setup — start with smart defaults
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* 1. INTERACTIVE LIVE CHEF ID BADGE (GAMIFIED PREVIEW) */}
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-[#7A1C2C]/10 via-amber-500/10 to-[#2ECC71]/10 border-2 border-stone-200 dark:border-zinc-700/80 shadow-xs flex items-center justify-between gap-3 relative overflow-hidden">
