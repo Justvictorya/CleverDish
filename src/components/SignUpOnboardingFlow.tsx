@@ -310,13 +310,12 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
           <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/5 pointer-events-none" />
 
           <div className="flex items-center gap-3.5 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 text-[#7A1C2C] flex items-center justify-center font-black text-2xl shadow-lg ring-2 ring-white/20 shrink-0">
-              {selectedAvatar}
+            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0 p-1.5">
+              <img src="/cleverdish-logo.png" alt="CleverDish" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-extrabold text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5">
-                  <img src="/cleverdish-logo-white.png" alt="" className="w-6 h-6 object-contain shrink-0" />
                   <span>CleverDish</span>
                   <span className="text-[10px] font-mono font-bold bg-[#2ECC71] text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
                     {sessionMode === 'signup' ? 'Chef Induction' : 'Chef Portal'}
