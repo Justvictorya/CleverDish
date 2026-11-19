@@ -316,6 +316,7 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-extrabold text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5">
+                  <img src="/cleverdish-logo-white.png" alt="" className="w-6 h-6 object-contain shrink-0" />
                   <span>CleverDish</span>
                   <span className="text-[10px] font-mono font-bold bg-[#2ECC71] text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
                     {sessionMode === 'signup' ? 'Chef Induction' : 'Chef Portal'}
