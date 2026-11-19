@@ -310,8 +310,8 @@ export const SignUpOnboardingFlow: React.FC<SignUpOnboardingFlowProps> = ({
           <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/5 pointer-events-none" />
 
           <div className="flex items-center gap-3.5 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0 p-1.5">
-              <img src="/cleverdish-logo.png" alt="CleverDish" className="w-full h-full object-contain" />
+            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0 overflow-hidden">
+              <img src="/cleverdish-logo-white-bg.png" alt="CleverDish" className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="flex items-center gap-2">

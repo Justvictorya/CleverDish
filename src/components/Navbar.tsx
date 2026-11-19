@@ -109,8 +109,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Brand bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-md p-1.5 shrink-0">
-            <img src="/cleverdish-logo.png" alt="CleverDish" className="w-full h-full object-contain" />
+          <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-md shrink-0 overflow-hidden">
+            <img src="/cleverdish-logo-white-bg.png" alt="CleverDish" className="w-full h-full object-cover" />
           </div>
           <div>
             <div className="flex items-center gap-2">
