@@ -1,0 +1,10 @@
+name = "cleverdish"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-19"
+
+# Free sign-up ledger. One row per person who taps "Continue with Google".
+# The schema lives in db/signup.sql.
+[[d1_databases]]
+binding = "DB"
+database_name = "cleverdish-signups"
+database_id = "fd9ce5a0-7d31-4aa6-8dc7-95544cf66fb1"
